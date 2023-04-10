@@ -1,15 +1,16 @@
 <?xml version="1.0" encoding="utf-8"?>
 <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/parent_layout"
     android:layout_width="match_parent"
     android:layout_height="70dp"
-    android:id="@+id/parent_layout">
+    android:background="#EAEAEA">
 
     <TextView
+        android:id="@+id/destination_name"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Canada"
-        android:id="@+id/destination_name"
         android:layout_centerVertical="true"
         android:layout_marginLeft="25dp"
+        android:text="Canada"
         android:textSize="17sp" />
 </RelativeLayout>

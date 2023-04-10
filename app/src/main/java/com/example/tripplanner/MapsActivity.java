@@ -57,6 +57,8 @@ import com.google.android.libraries.places.widget.listener.PlaceSelectionListene
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 import java.util.Properties;
 
@@ -79,9 +81,17 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     private ArrayList<String> destinationNames = new ArrayList<>();
     private RecyclerViewAdapter adapter;
 
-    ItemTouchHelper.SimpleCallback simpleCallback = new ItemTouchHelper.SimpleCallback(0, ItemTouchHelper.LEFT) {
+    ItemTouchHelper.SimpleCallback simpleCallback = new ItemTouchHelper.SimpleCallback(ItemTouchHelper.UP
+            | ItemTouchHelper.DOWN | ItemTouchHelper.START | ItemTouchHelper.END, ItemTouchHelper.LEFT) {
         @Override
         public boolean onMove(@NonNull RecyclerView recyclerView, @NonNull RecyclerView.ViewHolder viewHolder, @NonNull RecyclerView.ViewHolder target) {
+
+            int fromPosition = viewHolder.getAdapterPosition();
+            int toPosition = target.getAdapterPosition();
+
+            Collections.swap(destinationNames, fromPosition, toPosition);
+            adapter.notifyItemMoved(fromPosition, toPosition);
+
             return false;
         }
 
