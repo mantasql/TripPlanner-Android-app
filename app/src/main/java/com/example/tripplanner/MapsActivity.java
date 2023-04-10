@@ -4,9 +4,14 @@ import androidx.annotation.NonNull;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
 import androidx.fragment.app.FragmentActivity;
+import androidx.recyclerview.widget.DividerItemDecoration;
+import androidx.recyclerview.widget.ItemTouchHelper;
+import androidx.recyclerview.widget.LinearLayoutManager;
+import androidx.recyclerview.widget.RecyclerView;
 
 import android.Manifest;
 import android.content.pm.PackageManager;
+import android.graphics.Canvas;
 import android.location.Address;
 import android.location.Geocoder;
 import android.location.Location;
@@ -16,9 +21,14 @@ import android.view.KeyEvent;
 import android.view.View;
 import android.view.WindowManager;
 import android.view.inputmethod.EditorInfo;
+import android.widget.AdapterView;
+import android.widget.ArrayAdapter;
 import android.widget.AutoCompleteTextView;
+import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ImageView;
+import android.widget.ListView;
+import android.widget.RelativeLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -50,19 +60,53 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Properties;
 
+import it.xabaras.android.recyclerview.swipedecorator.RecyclerViewSwipeDecorator;
+
 public class MapsActivity extends FragmentActivity implements OnMapReadyCallback {
 
     private static final String TAG = "MapsActivity";
     private static final int LOCATION_PERMISSION_REQUEST_CODE = 1234;
-    private static final float DEFAULT_ZOOM = 5f;
+    private static final float DEFAULT_ZOOM = 15f;
     private PlacesClient placesClient;
-    //private AutoCompleteTextView mSearchText;
     private ImageView mGps;
     private AutocompleteSupportFragment autocompleteFragment;
+    private RecyclerView tripsList;
     private Boolean mLocationPermissionsGranted = false;
     private GoogleMap mMap;
     private ActivityMapsBinding binding;
     private FusedLocationProviderClient fusedLocationProviderClient;
+
+    private ArrayList<String> destinationNames = new ArrayList<>();
+    private RecyclerViewAdapter adapter;
+
+    ItemTouchHelper.SimpleCallback simpleCallback = new ItemTouchHelper.SimpleCallback(0, ItemTouchHelper.LEFT) {
+        @Override
+        public boolean onMove(@NonNull RecyclerView recyclerView, @NonNull RecyclerView.ViewHolder viewHolder, @NonNull RecyclerView.ViewHolder target) {
+            return false;
+        }
+
+        @Override
+        public void onSwiped(@NonNull RecyclerView.ViewHolder viewHolder, int direction) {
+            int position = viewHolder.getAdapterPosition();
+            switch (direction)
+            {
+                case ItemTouchHelper.LEFT:
+                    destinationNames.remove(position);
+                    adapter.notifyItemRemoved(position);
+                    break;
+            }
+        }
+
+        @Override
+        public void onChildDraw(@NonNull Canvas c, @NonNull RecyclerView recyclerView, @NonNull RecyclerView.ViewHolder viewHolder, float dX, float dY, int actionState, boolean isCurrentlyActive) {
+            new RecyclerViewSwipeDecorator.Builder(c, recyclerView, viewHolder, dX, dY, actionState, isCurrentlyActive)
+                    .addSwipeLeftBackgroundColor(ContextCompat.getColor(MapsActivity.this, com.google.android.libraries.places.R.color.quantum_googred400))
+                    .addSwipeLeftActionIcon(R.drawable.baseline_delete_24)
+                    .create()
+                    .decorate();
+            super.onChildDraw(c, recyclerView, viewHolder, dX, dY, actionState, isCurrentlyActive);
+        }
+    };
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -72,6 +116,8 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         setContentView(binding.getRoot());
         //mSearchText = (AutoCompleteTextView) findViewById(R.id.input_search);
         mGps = (ImageView) findViewById(R.id.ic_gps);
+
+        tripsList = findViewById(R.id.TripsList);
 
         if (!Places.isInitialized())
         {
@@ -88,20 +134,15 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     private void init()
     {
         Log.d(TAG, "init: initializing");
-/*        mSearchText.setOnEditorActionListener(new TextView.OnEditorActionListener() {
-            @Override
-            public boolean onEditorAction(TextView textView, int i, KeyEvent keyEvent) {
-                if (i == EditorInfo.IME_ACTION_SEARCH
-                        || i == EditorInfo.IME_ACTION_DONE
-                        || keyEvent.getAction() == KeyEvent.ACTION_DOWN
-                        || keyEvent.getAction() == KeyEvent.KEYCODE_ENTER)
-                {
-                    geoLocate();
-                }
 
-                return false;
-            }
-        });*/
+        RecyclerView recyclerView = findViewById(R.id.TripsList);
+        adapter = new RecyclerViewAdapter(this, destinationNames);
+        recyclerView.setAdapter(adapter);
+        recyclerView.setLayoutManager(new LinearLayoutManager(this));
+        recyclerView.addItemDecoration(new DividerItemDecoration(recyclerView.getContext(), DividerItemDecoration.VERTICAL));
+
+        ItemTouchHelper itemTouchHelper = new ItemTouchHelper(simpleCallback);
+        itemTouchHelper.attachToRecyclerView(recyclerView);
 
         mGps.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -114,21 +155,28 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         autocompleteFragment.setOnPlaceSelectedListener(new PlaceSelectionListener() {
             @Override
             public void onError(@NonNull Status status) {
-                Log.i(TAG, "An error occurred: " + status);
+                Log.d(TAG, "An error occurred: " + status);
             }
 
             @Override
             public void onPlaceSelected(@NonNull Place place) {
-                Log.i(TAG, "Place: " + place.getName() + ", " + place.getId());
+                Log.d(TAG, "Place: " + place.getName() + ", " + place.getId());
                 geoLocate(place);
+                destinationNames.add(place.getName());
+                adapter.notifyItemInserted(destinationNames.size() - 1);
             }
         });
+/*        tripsList.setOnItemLongClickListener(new AdapterView.OnItemLongClickListener() {
+            @Override
+            public boolean onItemLongClick(AdapterView<?> adapterView, View view, int i, long l) {
+                return false;
+            }
+        });*/
 
         hideSoftKeyboard();
     }
 
     private void geoLocate(Place place) {
-        //String searchString = mSearchText.getText().toString();
 
         Geocoder geocoder = new Geocoder(MapsActivity.this);
         List<Address> list = new ArrayList<>();
@@ -137,7 +185,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
             list = geocoder.getFromLocationName(place.getName(), 1);
         } catch (IOException e)
         {
-            Log.d(TAG, "geolocate: IOException: " + e.getMessage());
+            Log.d(TAG, "geoLocate: IOException: " + e.getMessage());
         }
 
         if (list.size() > 0)
@@ -275,6 +323,8 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     {
         Log.d(TAG, "moveCamera: moving camera to lat: " + latLng.latitude + " lng: " + latLng.longitude);
         mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(latLng, zoom));
+
+        mMap.clear();
 
         if (!title.equals("My location"))
         {

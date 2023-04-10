@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent">
 
@@ -10,7 +11,8 @@
         android:name="com.google.android.gms.maps.SupportMapFragment"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        tools:context=".MapsActivity" />
+        tools:context=".MapsActivity"
+        tools:layout="@layout/activity_main" />
 
     <RelativeLayout
         android:layout_width="match_parent"
@@ -46,7 +48,7 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:name="com.google.android.libraries.places.widget.AutocompleteSupportFragment"
-            />
+            tools:layout="@layout/activity_main" />
 
     </RelativeLayout>
 
@@ -60,5 +62,26 @@
         android:scaleType="centerCrop"
         android:id="@+id/ic_gps"
         android:src="@drawable/ic_gps"/>
+
+    <LinearLayout
+        android:layout_width = "match_parent"
+        android:layout_height = "200dp"
+        android:layout_alignParentBottom="true"
+        android:orientation = "vertical">
+
+<!--        <ListView
+            android:id="@+id/TripsList"
+            android:layout_width="match_parent"
+            android:layout_height="200dp"
+            android:layout_alignParentBottom="true"
+            android:background="@drawable/todo_border" />-->
+
+        <androidx.recyclerview.widget.RecyclerView
+            android:id="@+id/TripsList"
+            android:layout_width="match_parent"
+            android:layout_height="200dp"
+            android:layout_alignParentBottom="true"
+            android:background="@drawable/todo_border"/>
+    </LinearLayout>
 
 </RelativeLayout>
