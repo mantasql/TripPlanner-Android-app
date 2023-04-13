@@ -32,6 +32,8 @@ import android.widget.RelativeLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.google.android.gms.common.api.Api;
+import com.google.android.gms.common.api.ApiException;
 import com.google.android.gms.common.api.Status;
 import com.google.android.gms.location.FusedLocationProviderClient;
 import com.google.android.gms.location.LocationServices;
@@ -42,13 +44,16 @@ import com.google.android.gms.maps.SupportMapFragment;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.MarkerOptions;
 import com.example.tripplanner.databinding.ActivityMapsBinding;
+import com.google.android.gms.maps.model.PointOfInterest;
 import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.Task;
 import com.google.android.libraries.places.api.Places;
 import com.google.android.libraries.places.api.model.AutocompleteSessionToken;
 import com.google.android.libraries.places.api.model.Place;
+import com.google.android.libraries.places.api.net.FetchPlaceRequest;
 import com.google.android.libraries.places.api.net.FindAutocompletePredictionsRequest;
 import com.google.android.libraries.places.api.net.FindAutocompletePredictionsResponse;
+import com.google.android.libraries.places.api.net.FindCurrentPlaceRequest;
 import com.google.android.libraries.places.api.net.PlacesClient;
 import com.google.android.libraries.places.widget.AutocompleteActivity;
 import com.google.android.libraries.places.widget.AutocompleteSupportFragment;
@@ -80,6 +85,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
 
     private ArrayList<String> destinationNames = new ArrayList<>();
     private RecyclerViewAdapter adapter;
+    private List<Place.Field> placeFields;
 
     ItemTouchHelper.SimpleCallback simpleCallback = new ItemTouchHelper.SimpleCallback(ItemTouchHelper.UP
             | ItemTouchHelper.DOWN | ItemTouchHelper.START | ItemTouchHelper.END, ItemTouchHelper.LEFT) {
@@ -122,6 +128,8 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
+        placeFields = Arrays.asList(Place.Field.ID, Place.Field.NAME, Place.Field.LAT_LNG, Place.Field.ADDRESS);
+
         binding = ActivityMapsBinding.inflate(getLayoutInflater());
         setContentView(binding.getRoot());
         //mSearchText = (AutoCompleteTextView) findViewById(R.id.input_search);
@@ -136,7 +144,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         placesClient = Places.createClient(this);
 
         autocompleteFragment = (AutocompleteSupportFragment) getSupportFragmentManager().findFragmentById(R.id.autocomplete_fragment);
-        autocompleteFragment.setPlaceFields(Arrays.asList(Place.Field.ID, Place.Field.NAME));
+        autocompleteFragment.setPlaceFields(placeFields);
 
         getLocationPermission();
     }
@@ -171,28 +179,51 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
             @Override
             public void onPlaceSelected(@NonNull Place place) {
                 Log.d(TAG, "Place: " + place.getName() + ", " + place.getId());
-                geoLocate(place);
+                Log.d(TAG, "onPlaceSelected: " + place.getAddress() + "," + place.getLatLng() + "," + place.getName());
+                geoLocate(place.getLatLng());
                 destinationNames.add(place.getName());
                 adapter.notifyItemInserted(destinationNames.size() - 1);
             }
         });
-/*        tripsList.setOnItemLongClickListener(new AdapterView.OnItemLongClickListener() {
+
+        mMap.setOnPoiClickListener(new GoogleMap.OnPoiClickListener() {
             @Override
-            public boolean onItemLongClick(AdapterView<?> adapterView, View view, int i, long l) {
-                return false;
+            public void onPoiClick(@NonNull PointOfInterest pointOfInterest) {
+                FetchPlaceRequest request = FetchPlaceRequest.newInstance(pointOfInterest.placeId, placeFields);
+
+                placesClient.fetchPlace(request).addOnSuccessListener((response) -> {
+                   Place place = response.getPlace();
+                   Log.d(TAG, "onPoiClick: Found place!!!: " + place.getName());
+
+                   geoLocate(place.getLatLng());
+                   destinationNames.add(place.getName());
+                   adapter.notifyItemInserted(destinationNames.size() - 1);
+
+
+                }).addOnFailureListener((exception) ->{
+                    if (exception instanceof ApiException)
+                    {
+                        ApiException apiException = (ApiException) exception;
+                        int statusCode = apiException.getStatusCode();
+
+                        //handle error
+
+                        Log.e(TAG, "onPoiClick: Place not found: " + exception.getMessage());
+                    }
+                });
             }
-        });*/
+        });
 
         hideSoftKeyboard();
     }
 
-    private void geoLocate(Place place) {
+    private void geoLocate(LatLng latLng) {
 
         Geocoder geocoder = new Geocoder(MapsActivity.this);
         List<Address> list = new ArrayList<>();
 
         try {
-            list = geocoder.getFromLocationName(place.getName(), 1);
+            list = geocoder.getFromLocation(latLng.latitude, latLng.longitude, 1);
         } catch (IOException e)
         {
             Log.d(TAG, "geoLocate: IOException: " + e.getMessage());
