@@ -10,6 +10,7 @@ import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import android.Manifest;
+import android.app.AlertDialog;
 import android.content.pm.PackageManager;
 import android.graphics.Canvas;
 import android.location.Address;
@@ -86,6 +87,8 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     private ArrayList<String> destinationNames = new ArrayList<>();
     private RecyclerViewAdapter adapter;
     private List<Place.Field> placeFields;
+    private AlertDialog.Builder dialogBuilder;
+    private AlertDialog dialog;
 
     ItemTouchHelper.SimpleCallback simpleCallback = new ItemTouchHelper.SimpleCallback(ItemTouchHelper.UP
             | ItemTouchHelper.DOWN | ItemTouchHelper.START | ItemTouchHelper.END, ItemTouchHelper.LEFT) {
@@ -128,11 +131,10 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
-        placeFields = Arrays.asList(Place.Field.ID, Place.Field.NAME, Place.Field.LAT_LNG, Place.Field.ADDRESS);
+        placeFields = Arrays.asList(Place.Field.ID, Place.Field.NAME, Place.Field.LAT_LNG, Place.Field.ADDRESS, Place.Field.ICON_URL, Place.Field.WEBSITE_URI);
 
         binding = ActivityMapsBinding.inflate(getLayoutInflater());
         setContentView(binding.getRoot());
-        //mSearchText = (AutoCompleteTextView) findViewById(R.id.input_search);
         mGps = (ImageView) findViewById(R.id.ic_gps);
 
         tripsList = findViewById(R.id.TripsList);
@@ -181,8 +183,9 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                 Log.d(TAG, "Place: " + place.getName() + ", " + place.getId());
                 Log.d(TAG, "onPlaceSelected: " + place.getAddress() + "," + place.getLatLng() + "," + place.getName());
                 geoLocate(place.getLatLng());
-                destinationNames.add(place.getName());
-                adapter.notifyItemInserted(destinationNames.size() - 1);
+                openLocationInfo(place);
+/*                destinationNames.add(place.getName());
+                adapter.notifyItemInserted(destinationNames.size() - 1);*/
             }
         });
 
@@ -194,11 +197,9 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                 placesClient.fetchPlace(request).addOnSuccessListener((response) -> {
                    Place place = response.getPlace();
                    Log.d(TAG, "onPoiClick: Found place!!!: " + place.getName());
+                   Log.d(TAG, "onPoiClick: place url: " + place.getWebsiteUri());
 
-                   geoLocate(place.getLatLng());
-                   destinationNames.add(place.getName());
-                   adapter.notifyItemInserted(destinationNames.size() - 1);
-
+                   openLocationInfo(place);
 
                 }).addOnFailureListener((exception) ->{
                     if (exception instanceof ApiException)
@@ -259,11 +260,6 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         Toast.makeText(this, "Map is ready", Toast.LENGTH_SHORT).show();
 
         mMap = googleMap;
-
-        // Add a marker in Sydney and move the camera
-/*        LatLng sydney = new LatLng(-34, 151);
-        mMap.addMarker(new MarkerOptions().position(sydney).title("Marker in Sydney"));
-        mMap.moveCamera(CameraUpdateFactory.newLatLng(sydney));*/
 
         if (mLocationPermissionsGranted) {
             getDeviceLocation();
@@ -379,5 +375,40 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     private void hideSoftKeyboard()
     {
         this.getWindow().setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_STATE_ALWAYS_HIDDEN);
+    }
+
+    private void openLocationInfo(Place place)
+    {
+        dialogBuilder = new AlertDialog.Builder(this);
+        final View locationPopupView = getLayoutInflater().inflate(R.layout.fragment_add_location, null);
+
+        TextView locationName = locationPopupView.findViewById(R.id.location_text);
+        TextView addressText = locationPopupView.findViewById(R.id.address_text);
+        Button addLocationBtn = locationPopupView.findViewById(R.id.add_location);
+        Button addLocationCancelBtn = locationPopupView.findViewById(R.id.add_location_cancel);
+
+        locationName.setText(place.getName());
+        addressText.setText(place.getAddress());
+
+        dialogBuilder.setView(locationPopupView);
+        dialog = dialogBuilder.create();
+        dialog.show();
+
+        addLocationBtn.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                geoLocate(place.getLatLng());
+                destinationNames.add(place.getName());
+                adapter.notifyItemInserted(destinationNames.size() - 1);
+                dialog.dismiss();
+            }
+        });
+
+        addLocationCancelBtn.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                dialog.dismiss();
+            }
+        });
     }
 }
