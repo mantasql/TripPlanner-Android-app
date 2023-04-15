@@ -13,9 +13,11 @@ import android.Manifest;
 import android.app.AlertDialog;
 import android.content.pm.PackageManager;
 import android.graphics.Canvas;
+import android.graphics.Point;
 import android.location.Address;
 import android.location.Geocoder;
 import android.location.Location;
+import android.net.Uri;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.KeyEvent;
@@ -33,6 +35,14 @@ import android.widget.RelativeLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.android.volley.DefaultRetryPolicy;
+import com.android.volley.Request;
+import com.android.volley.RequestQueue;
+import com.android.volley.Response;
+import com.android.volley.RetryPolicy;
+import com.android.volley.VolleyError;
+import com.android.volley.toolbox.JsonObjectRequest;
+import com.android.volley.toolbox.Volley;
 import com.google.android.gms.common.api.Api;
 import com.google.android.gms.common.api.ApiException;
 import com.google.android.gms.common.api.Status;
@@ -43,9 +53,11 @@ import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.SupportMapFragment;
 import com.google.android.gms.maps.model.LatLng;
+import com.google.android.gms.maps.model.LatLngBounds;
 import com.google.android.gms.maps.model.MarkerOptions;
 import com.example.tripplanner.databinding.ActivityMapsBinding;
 import com.google.android.gms.maps.model.PointOfInterest;
+import com.google.android.gms.maps.model.PolylineOptions;
 import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.Task;
 import com.google.android.libraries.places.api.Places;
@@ -59,6 +71,11 @@ import com.google.android.libraries.places.api.net.PlacesClient;
 import com.google.android.libraries.places.widget.AutocompleteActivity;
 import com.google.android.libraries.places.widget.AutocompleteSupportFragment;
 import com.google.android.libraries.places.widget.listener.PlaceSelectionListener;
+import com.google.gson.JsonObject;
+
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -83,8 +100,8 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     private GoogleMap mMap;
     private ActivityMapsBinding binding;
     private FusedLocationProviderClient fusedLocationProviderClient;
-
     private ArrayList<String> destinationNames = new ArrayList<>();
+    private ArrayList<Place> places = new ArrayList<>();
     private RecyclerViewAdapter adapter;
     private List<Place.Field> placeFields;
     private AlertDialog.Builder dialogBuilder;
@@ -184,8 +201,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                 Log.d(TAG, "onPlaceSelected: " + place.getAddress() + "," + place.getLatLng() + "," + place.getName());
                 geoLocate(place.getLatLng());
                 openLocationInfo(place);
-/*                destinationNames.add(place.getName());
-                adapter.notifyItemInserted(destinationNames.size() - 1);*/
+                places.add(place);
             }
         });
 
@@ -199,7 +215,10 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                    Log.d(TAG, "onPoiClick: Found place!!!: " + place.getName());
                    Log.d(TAG, "onPoiClick: place url: " + place.getWebsiteUri());
 
-                   openLocationInfo(place);
+/*                   openLocationInfo(place);
+                   places.add(place);*/
+
+                   direction();
 
                 }).addOnFailureListener((exception) ->{
                     if (exception instanceof ApiException)
@@ -410,5 +429,126 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                 dialog.dismiss();
             }
         });
+    }
+
+    private void direction()
+    {
+        RequestQueue requestQueue = Volley.newRequestQueue(this);
+        String url = Uri.parse("https://maps.googleapis.com/maps/api/directions/json")
+                .buildUpon()
+                .appendQueryParameter("destination", "54.6871627, 25.2795778")
+                .appendQueryParameter("origin", "55.7348803, 24.357187900000003")
+                .appendQueryParameter("mode", "driving")
+                .appendQueryParameter("departure_time", "now")
+                //.appendQueryParameter("waypoints", "Ukmergė")
+                .appendQueryParameter("key", BuildConfig.MAPS_API_KEY)
+                .toString();
+        JsonObjectRequest jsonObjectRequest = new JsonObjectRequest(Request.Method.GET, url, null, new Response.Listener<JSONObject>() {
+            @Override
+            public void onResponse(JSONObject response) {
+                try {
+                    String status = response.getString("status");
+                    Log.d(TAG, "onResponse: STATUS CODE: " + status);
+                    if (status.equals("OK"))
+                    {
+                        JSONArray routes = response.getJSONArray("routes");
+
+                        ArrayList<LatLng> points;
+                        PolylineOptions polylineOptions = null;
+
+                        for (int i = 0; i < routes.length(); i++)
+                        {
+                            points = new ArrayList<>();
+                            polylineOptions = new PolylineOptions();
+                            JSONArray legs = routes.getJSONObject(i).getJSONArray("legs");
+
+                            for (int j = 0; j < legs.length(); j++)
+                            {
+                                JSONArray steps = legs.getJSONObject(j).getJSONArray("steps");
+
+                                String durationInTraffic = legs.getJSONObject(j).optJSONObject("duration_in_traffic").getString("text");
+                                Log.d(TAG, "onResponse: duration In Traffic: " + durationInTraffic);
+
+                                for (int k = 0; k < steps.length(); k++)
+                                {
+                                    String polyline = steps.getJSONObject(k).getJSONObject("polyline").getString("points");
+                                    List<LatLng> list = decodePoly(polyline);
+
+                                    for (int l = 0; l < list.size(); l++)
+                                    {
+                                        LatLng position = new LatLng((list.get(l)).latitude, (list.get(l)).longitude);
+                                        points.add(position);
+                                    }
+                                }
+                            }
+                            polylineOptions.addAll(points);
+                            polylineOptions.width(10);
+                            polylineOptions.color(ContextCompat.getColor(MapsActivity.this, R.color.purple_500));
+                            polylineOptions.geodesic(true);
+                        }
+                        mMap.addPolyline(polylineOptions);
+                        mMap.addMarker(new MarkerOptions().position(new LatLng(-6.9249233, 107.6345122)).title("Marker 1"));
+                        mMap.addMarker(new MarkerOptions().position(new LatLng(-6.9218571, 107.6048254)).title("Marker 2"));
+
+                        LatLngBounds bounds = new LatLngBounds.Builder()
+                                .include(new LatLng(54.6871627, 25.2795778))
+                                .include(new LatLng(55.7348803, 24.357187900000003))
+                                .build();
+
+                        Point point = new Point();
+                        getWindowManager().getDefaultDisplay().getSize(point);
+                        mMap.animateCamera(CameraUpdateFactory.newLatLngBounds(bounds, point.x, 150, 30));
+                    }
+                } catch (JSONException e)
+                {
+                    e.printStackTrace();
+                }
+            }
+        }, new Response.ErrorListener() {
+            @Override
+            public void onErrorResponse(VolleyError error) {
+                
+            }
+        });
+        RetryPolicy retryPolicy = new DefaultRetryPolicy(30000, DefaultRetryPolicy.DEFAULT_MAX_RETRIES, DefaultRetryPolicy.DEFAULT_BACKOFF_MULT);
+        jsonObjectRequest.setRetryPolicy(retryPolicy);
+        requestQueue.add(jsonObjectRequest);
+    }
+
+    private ArrayList<LatLng> decodePoly(String encoded) {
+
+        Log.i("Location", "String received: "+encoded);
+        ArrayList<LatLng> poly = new ArrayList<LatLng>();
+        int index = 0, len = encoded.length();
+        int lat = 0, lng = 0;
+
+        while (index < len) {
+            int b, shift = 0, result = 0;
+            do {
+                b = encoded.charAt(index++) - 63;
+                result |= (b & 0x1f) << shift;
+                shift += 5;
+            } while (b >= 0x20);
+            int dlat = ((result & 1) != 0 ? ~(result >> 1) : (result >> 1));
+            lat += dlat;
+
+            shift = 0;
+            result = 0;
+            do {
+                b = encoded.charAt(index++) - 63;
+                result |= (b & 0x1f) << shift;
+                shift += 5;
+            } while (b >= 0x20);
+            int dlng = ((result & 1) != 0 ? ~(result >> 1) : (result >> 1));
+            lng += dlng;
+
+            LatLng p = new LatLng(((double) lat / 1E5), ((double) lng / 1E5));
+            poly.add(p);
+        }
+
+        for(int i=0;i<poly.size();i++){
+            Log.i("Location", "Point sent: Latitude: "+poly.get(i).latitude+" Longitude: "+poly.get(i).longitude);
+        }
+        return poly;
     }
 }
