@@ -1,0 +1,40 @@
+{
+  "project_info": {
+    "project_number": "21433595127",
+    "firebase_url": "https://trip-planner-21c97-default-rtdb.europe-west1.firebasedatabase.app",
+    "project_id": "trip-planner-21c97",
+    "storage_bucket": "trip-planner-21c97.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:21433595127:android:6d843f6d13fd8692958ff2",
+        "android_client_info": {
+          "package_name": "com.example.tripplanner"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "21433595127-sj2vba1uscfhsgc7hu51d8uhhti8bhoo.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyC0jF46z3597ygix76cMLXl04-5IOAC8jo"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "21433595127-sj2vba1uscfhsgc7hu51d8uhhti8bhoo.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

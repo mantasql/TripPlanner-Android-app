@@ -1,6 +1,7 @@
 package com.example.tripplanner;
 
 import android.content.Context;
+import android.content.Intent;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -12,16 +13,18 @@ import android.widget.Toast;
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
 
+import com.example.tripplanner.models.TripPlan;
+
 import java.util.ArrayList;
 
-public class RecyclerViewAdapter extends RecyclerView.Adapter<RecyclerViewAdapter.ViewHolder>{
+public class TripPlansAdapter extends RecyclerView.Adapter<TripPlansAdapter.ViewHolder>{
 
     private static final String TAG = "RecyclerViewAdapter";
-    private ArrayList<String> destinationNames = new ArrayList<>();
+    private ArrayList<TripPlan> tripPlans = new ArrayList<>();
     private Context mContext;
 
-    public RecyclerViewAdapter(Context mContext, ArrayList<String> destinationNames) {
-        this.destinationNames = destinationNames;
+    public TripPlansAdapter(Context mContext, ArrayList<TripPlan> tripPlans) {
+        this.tripPlans = tripPlans;
         this.mContext = mContext;
     }
 
@@ -36,20 +39,24 @@ public class RecyclerViewAdapter extends RecyclerView.Adapter<RecyclerViewAdapte
     public void onBindViewHolder(@NonNull ViewHolder holder, int position) {
         Log.d(TAG, "onBindViewHolder: called.");
 
-        holder.destinationName.setText(destinationNames.get(holder.getAdapterPosition()));
+        holder.destinationName.setText(tripPlans.get(holder.getAdapterPosition()).getTitle());
         
         holder.parentLayout.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
                 Log.d(TAG, "onClick: Clicked on item");
-                Toast.makeText(mContext, destinationNames.get(holder.getAdapterPosition()), Toast.LENGTH_SHORT).show();
+                Toast.makeText(mContext, tripPlans.get(holder.getAdapterPosition()).getTitle(), Toast.LENGTH_SHORT).show();
+                Intent intent = new Intent(view.getContext(), TripPlanActivity.class);
+                Log.d(TAG, "onClick: my id: " + tripPlans.get(holder.getAdapterPosition()).getId());
+                intent.putExtra("planNo", tripPlans.get(holder.getAdapterPosition()).getId());
+                view.getContext().startActivity(intent);
             }
         });
     }
 
     @Override
     public int getItemCount() {
-        return destinationNames.size();
+        return tripPlans.size();
     }
 
     public class ViewHolder extends RecyclerView.ViewHolder {

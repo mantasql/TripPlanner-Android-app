@@ -24,26 +24,6 @@
         android:background="@drawable/white_border"
         android:id="@+id/relLayout1">
 
-<!--        <ImageView
-            android:layout_width="15dp"
-            android:layout_height="15dp"
-            android:id="@+id/ic_magnify"
-            android:layout_centerVertical="true"
-            android:layout_marginLeft="10dp"
-            android:src="@drawable/ic_magnify"/>-->
-
-<!--        <AutoCompleteTextView
-            android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            android:layout_toRightOf="@+id/ic_magnify"
-            android:layout_centerVertical="true"
-            android:textSize="15sp"
-            android:textColor="#000"
-            android:id="@+id/input_search"
-            android:background="@null"
-            android:hint="Enter Address or City"
-            android:imeOptions="actionSearch"/>-->
-
         <fragment android:id="@+id/autocomplete_fragment"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -68,13 +48,6 @@
         android:layout_height = "200dp"
         android:layout_alignParentBottom="true"
         android:orientation = "vertical">
-
-<!--        <ListView
-            android:id="@+id/TripsList"
-            android:layout_width="match_parent"
-            android:layout_height="200dp"
-            android:layout_alignParentBottom="true"
-            android:background="@drawable/todo_border" />-->
 
         <androidx.recyclerview.widget.RecyclerView
             android:id="@+id/TripsList"
