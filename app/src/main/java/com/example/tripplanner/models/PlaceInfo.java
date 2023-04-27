@@ -3,26 +3,42 @@ package com.example.tripplanner.models;
 import android.net.Uri;
 
 import com.google.android.gms.maps.model.LatLng;
+import com.google.android.libraries.places.api.model.Place;
+
+import java.util.List;
 
 public class PlaceInfo {
     private String id;
     private String name;
     private String address;
     private String phoneNumber;
-    private Uri websiteUri;
-    private LatLng latlng;
-    private float rating;
-    private String attributions;
+    private String websiteUri;
+    private com.example.tripplanner.models.LatLng latLng;
+    private Double rating;
+    private List<String> attributions;
 
-    public PlaceInfo(String id, String name, String address, String phoneNumber, Uri websiteUri, LatLng latlng, float rating, String attributions) {
+    public PlaceInfo(String id, String name, String address, String phoneNumber, String websiteUri, com.example.tripplanner.models.LatLng latLng, Double rating, List<String> attributions) {
         this.id = id;
         this.name = name;
         this.address = address;
         this.phoneNumber = phoneNumber;
         this.websiteUri = websiteUri;
-        this.latlng = latlng;
+        this.latLng = latLng;
         this.rating = rating;
         this.attributions = attributions;
+    }
+
+    public PlaceInfo(Place place)
+    {
+        this.name = place.getName();
+        this.address = place.getAddress();
+        this.phoneNumber = place.getPhoneNumber();
+        if (place.getWebsiteUri() != null)
+        {
+            this.websiteUri = place.getWebsiteUri().toString();
+        }
+        this.latLng = new com.example.tripplanner.models.LatLng(place.getLatLng().latitude, place.getLatLng().longitude);
+        this.attributions = place.getAttributions();
     }
 
     public PlaceInfo() {
@@ -60,35 +76,35 @@ public class PlaceInfo {
         this.phoneNumber = phoneNumber;
     }
 
-    public Uri getWebsiteUri() {
+    public String getWebsiteUri() {
         return websiteUri;
     }
 
-    public void setWebsiteUri(Uri websiteUri) {
+    public void setWebsiteUri(String websiteUri) {
         this.websiteUri = websiteUri;
     }
 
-    public LatLng getLatlng() {
-        return latlng;
+    public com.example.tripplanner.models.LatLng getLatLng() {
+        return latLng;
     }
 
-    public void setLatlng(LatLng latlng) {
-        this.latlng = latlng;
+    public void setLatLng(com.example.tripplanner.models.LatLng latLng) {
+        this.latLng = latLng;
     }
 
-    public float getRating() {
+    public Double getRating() {
         return rating;
     }
 
-    public void setRating(float rating) {
+    public void setRating(Double rating) {
         this.rating = rating;
     }
 
-    public String getAttributions() {
+    public List<String> getAttributions() {
         return attributions;
     }
 
-    public void setAttributions(String attributions) {
+    public void setAttributions(List<String> attributions) {
         this.attributions = attributions;
     }
 
@@ -100,7 +116,7 @@ public class PlaceInfo {
                 ", address='" + address + '\'' +
                 ", phoneNumber='" + phoneNumber + '\'' +
                 ", websiteUri=" + websiteUri +
-                ", latlng=" + latlng +
+                ", latLng=" + latLng +
                 ", rating=" + rating +
                 ", attributions='" + attributions + '\'' +
                 '}';

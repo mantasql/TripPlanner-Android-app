@@ -21,7 +21,6 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import com.example.tripplanner.models.TripPlan;
-import com.example.tripplanner.models.User;
 import com.example.tripplanner.utils.DateFormat;
 import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.Task;
@@ -46,10 +45,11 @@ public class TripPlanActivity extends AppCompatActivity {
     private ImageView mapsBtn;
     private TripPlan tripPlan;
     private FirebaseUser user;
-    private PlaceAdapter placeAdapter;
+    private ItineraryAdapter itineraryAdapter;
     private FirebaseAuth mAuth;
     private DatabaseReference mDatabase;
     private DatabaseReference planRef;
+    private RecyclerView recyclerView;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -73,11 +73,10 @@ public class TripPlanActivity extends AppCompatActivity {
 
         String planNo = getIntent().getExtras().getString("planNo");
 
-        if (planNo.equals("-1"))
+        if (planNo.equals("-1") && tripPlan == null)
         {
             String id = mDatabase.child("users").child(user.getUid()).child("plans").push().getKey();
             tripPlan = new TripPlan(id, "My trip plan");
-            //mDatabase.child("users").child(user.getUid()).child("plans").child(tripPlan.getId()).setValue(tripPlan);
             mDatabase.child("users").child(user.getUid()).child("plans").child(tripPlan.getId()).setValue(tripPlan).addOnCompleteListener(new OnCompleteListener<Void>() {
                 @Override
                 public void onComplete(@NonNull Task<Void> task) {
@@ -93,17 +92,14 @@ public class TripPlanActivity extends AppCompatActivity {
 
     private void init()
     {
-        planRef = mDatabase.child("users").child(user.getUid()).child("plans").child(tripPlan.getId());
-
-        RecyclerView recyclerView = findViewById(R.id.itinerariesView);
-        placeAdapter = new PlaceAdapter(this, tripPlan.getPlaces());
-        recyclerView.setAdapter(placeAdapter);
+        recyclerView = findViewById(R.id.itinerariesView);
         recyclerView.setLayoutManager(new LinearLayoutManager(this));
         recyclerView.addItemDecoration(new DividerItemDecoration(recyclerView.getContext(), DividerItemDecoration.VERTICAL));
 
         planName.setOnFocusChangeListener(new View.OnFocusChangeListener() {
             @Override
             public void onFocusChange(View view, boolean b) {
+                Log.d(TAG, "onFocusChange: focus changed plan name!");
                 if (!b)
                 {
                     planRef.child("title").setValue(planName.getText().toString());
@@ -154,18 +150,29 @@ public class TripPlanActivity extends AppCompatActivity {
     private void listenToDataChange()
     {
         String planNo = getIntent().getExtras().getString("planNo");
-        Query planQuery = mDatabase.child("users").child(user.getUid()).child("plans").child(planNo);
 
-        planQuery.addValueEventListener(new ValueEventListener() {
+        if (planNo.equals("-1"))
+        {
+            planNo = tripPlan.getId();
+        }
+
+        planRef = mDatabase.child("users").child(user.getUid()).child("plans").child(planNo);
+        init();
+
+        planRef.addValueEventListener(new ValueEventListener() {
             @Override
             public void onDataChange(@NonNull DataSnapshot snapshot) {
                 tripPlan = snapshot.getValue(TripPlan.class);
-                planName.setText(tripPlan.getTitle(), TextView.BufferType.EDITABLE);
-                startDate.setText(tripPlan.getStartOnlyDate(), TextView.BufferType.EDITABLE);
-                endDate.setText(tripPlan.getEndOnlyDate(), TextView.BufferType.EDITABLE);
-                description.setText(tripPlan.getDescription(), TextView.BufferType.EDITABLE);
-                Log.d(TAG, "onDataChange: tripPlan: " + tripPlan);
-                init();
+                if (tripPlan != null)
+                {
+                    planName.setText(tripPlan.getTitle(), TextView.BufferType.EDITABLE);
+                    startDate.setText(tripPlan.getStartOnlyDate(), TextView.BufferType.EDITABLE);
+                    endDate.setText(tripPlan.getEndOnlyDate(), TextView.BufferType.EDITABLE);
+                    description.setText(tripPlan.getDescription(), TextView.BufferType.EDITABLE);
+                    Log.d(TAG, "onDataChange: tripPlan: " + tripPlan);
+                    itineraryAdapter = new ItineraryAdapter(TripPlanActivity.this, tripPlan.getItinerary());
+                    recyclerView.setAdapter(itineraryAdapter);
+                }
             }
 
             @Override

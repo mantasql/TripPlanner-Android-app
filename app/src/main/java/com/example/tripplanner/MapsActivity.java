@@ -1,6 +1,7 @@
 package com.example.tripplanner;
 
 import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
 import androidx.fragment.app.FragmentActivity;
@@ -11,7 +12,6 @@ import androidx.recyclerview.widget.RecyclerView;
 
 import android.Manifest;
 import android.app.AlertDialog;
-import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.graphics.Canvas;
 import android.graphics.Point;
@@ -36,7 +36,11 @@ import com.android.volley.RetryPolicy;
 import com.android.volley.VolleyError;
 import com.android.volley.toolbox.JsonObjectRequest;
 import com.android.volley.toolbox.Volley;
+import com.example.tripplanner.models.Itinerary;
+import com.example.tripplanner.models.PlaceInfo;
+import com.example.tripplanner.models.TripPlan;
 import com.example.tripplanner.models.User;
+import com.example.tripplanner.utils.ItineraryComparator;
 import com.google.android.gms.common.api.ApiException;
 import com.google.android.gms.common.api.Status;
 import com.google.android.gms.location.FusedLocationProviderClient;
@@ -65,6 +69,7 @@ import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
+import com.google.firebase.database.Query;
 import com.google.firebase.database.ValueEventListener;
 
 import org.json.JSONArray;
@@ -75,6 +80,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 
 import it.xabaras.android.recyclerview.swipedecorator.RecyclerViewSwipeDecorator;
@@ -92,28 +98,51 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     private GoogleMap mMap;
     private ActivityMapsBinding binding;
     private FusedLocationProviderClient fusedLocationProviderClient;
-    private ArrayList<String> destinationNames = new ArrayList<>();
-    private ArrayList<Place> places = new ArrayList<>();
-    private PlaceAdapter adapter;
+    //private ItineraryAdapter adapter;
     private List<Place.Field> placeFields;
     private AlertDialog.Builder dialogBuilder;
     private AlertDialog dialog;
 
+    private TripPlan tripPlan;
+
     private DatabaseReference mDatabase;
+    private DatabaseReference planRef;
     private User loggedInUser;
+    private RecyclerView recyclerView;
 
     ItemTouchHelper.SimpleCallback simpleCallback = new ItemTouchHelper.SimpleCallback(ItemTouchHelper.UP
             | ItemTouchHelper.DOWN | ItemTouchHelper.START | ItemTouchHelper.END, ItemTouchHelper.LEFT) {
+
+        boolean isDragging = false;
         @Override
         public boolean onMove(@NonNull RecyclerView recyclerView, @NonNull RecyclerView.ViewHolder viewHolder, @NonNull RecyclerView.ViewHolder target) {
 
             int fromPosition = viewHolder.getAdapterPosition();
             int toPosition = target.getAdapterPosition();
 
-            Collections.swap(destinationNames, fromPosition, toPosition);
-            adapter.notifyItemMoved(fromPosition, toPosition);
-
+            if (isDragging)
+            {
+                tripPlan.getItinerary().get(fromPosition).setPosition(toPosition);
+                tripPlan.getItinerary().get(toPosition).setPosition(fromPosition);
+                Collections.swap(tripPlan.getItinerary(), fromPosition, toPosition);
+                recyclerView.getAdapter().notifyItemMoved(fromPosition, toPosition);
+            }
             return false;
+        }
+
+        @Override
+        public void onSelectedChanged(@Nullable RecyclerView.ViewHolder viewHolder, int actionState) {
+            super.onSelectedChanged(viewHolder, actionState);
+
+            if (actionState == ItemTouchHelper.ACTION_STATE_IDLE && isDragging)
+            {
+                planRef.child("itinerary").setValue(tripPlan.getItinerary());
+                isDragging = false;
+            }
+            else if (actionState == ItemTouchHelper.ACTION_STATE_DRAG)
+            {
+                isDragging = true;
+            }
         }
 
         @Override
@@ -122,8 +151,8 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
             switch (direction)
             {
                 case ItemTouchHelper.LEFT:
-                    destinationNames.remove(position);
-                    adapter.notifyItemRemoved(position);
+                    tripPlan.removeAndRearrange(position);
+                    planRef.child("itinerary").setValue(tripPlan.getItinerary());
                     break;
             }
         }
@@ -143,7 +172,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
-        placeFields = Arrays.asList(Place.Field.ID, Place.Field.NAME, Place.Field.LAT_LNG, Place.Field.ADDRESS, Place.Field.ICON_URL, Place.Field.WEBSITE_URI);
+        placeFields = Arrays.asList(Place.Field.ID, Place.Field.NAME, Place.Field.LAT_LNG, Place.Field.ADDRESS, Place.Field.ICON_URL, Place.Field.WEBSITE_URI, Place.Field.RATING);
 
         binding = ActivityMapsBinding.inflate(getLayoutInflater());
         setContentView(binding.getRoot());
@@ -170,13 +199,18 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         super.onStart();
 
         FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
+        String planNo = getIntent().getExtras().getString("planNo");
+        planRef = mDatabase.child("users").child(user.getUid()).child("plans").child(planNo);
+        initPlaces();
 
-        mDatabase.child("users").child(user.getUid()).addListenerForSingleValueEvent(new ValueEventListener() {
+        planRef.addValueEventListener(new ValueEventListener() {
             @Override
             public void onDataChange(@NonNull DataSnapshot snapshot) {
-                loggedInUser = snapshot.getValue(User.class);
+                tripPlan = snapshot.getValue(TripPlan.class);
+                tripPlan.getItinerary().sort(new ItineraryComparator());
 
-                initPlaces();
+                ItineraryAdapter adapter = new ItineraryAdapter(MapsActivity.this, tripPlan.getItinerary());
+                recyclerView.setAdapter(adapter);
             }
 
             @Override
@@ -188,9 +222,9 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
 
     private void initPlaces()
     {
-        RecyclerView recyclerView = findViewById(R.id.TripsList);
-        adapter = new PlaceAdapter(this, loggedInUser.getPlans().get(0).getPlaces());
-        recyclerView.setAdapter(adapter);
+        recyclerView = findViewById(R.id.TripsList);
+        //adapter = new ItineraryAdapter(this, tripPlan.getItineraries());
+        //recyclerView.setAdapter(adapter);
         recyclerView.setLayoutManager(new LinearLayoutManager(this));
         recyclerView.addItemDecoration(new DividerItemDecoration(recyclerView.getContext(), DividerItemDecoration.VERTICAL));
 
@@ -221,8 +255,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                 Log.d(TAG, "Place: " + place.getName() + ", " + place.getId());
                 Log.d(TAG, "onPlaceSelected: " + place.getAddress() + "," + place.getLatLng() + "," + place.getName());
                 geoLocate(place.getLatLng());
-                openLocationInfo(place);
-                places.add(place);
+                openLocationInfo(new PlaceInfo(place));
             }
         });
 
@@ -417,7 +450,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         this.getWindow().setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_STATE_ALWAYS_HIDDEN);
     }
 
-    private void openLocationInfo(Place place)
+    private void openLocationInfo(PlaceInfo place)
     {
         dialogBuilder = new AlertDialog.Builder(this);
         final View locationPopupView = getLayoutInflater().inflate(R.layout.fragment_add_location, null);
@@ -437,10 +470,16 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         addLocationBtn.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                geoLocate(place.getLatLng());
-                destinationNames.add(place.getName());
-                adapter.notifyItemInserted(destinationNames.size() - 1);
-                dialog.dismiss();
+                geoLocate(new LatLng(place.getLatLng().getLatitude(), place.getLatLng().getLongitude()));
+                Itinerary it = new Itinerary(tripPlan.getItinerary().size(), place);
+                tripPlan.getItinerary().add(it);
+                planRef.child("itinerary").setValue(tripPlan.getItinerary()).addOnCompleteListener(new OnCompleteListener<Void>() {
+                    @Override
+                    public void onComplete(@NonNull Task<Void> task) {
+                        dialog.dismiss();
+                    }
+                });
+
             }
         });
 

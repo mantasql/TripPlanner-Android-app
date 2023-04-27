@@ -1,31 +1,30 @@
 package com.example.tripplanner.models;
 
+import android.util.Log;
+
 import com.example.tripplanner.utils.DateFormat;
+import com.google.firebase.database.Exclude;
 
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.time.LocalDate;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.Date;
+import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 
 public class TripPlan {
 
+    private static final String TAG = "TripPlan";
     private String id;
     private String title;
     private Date startDate = new Date();
     private Date endDate = new Date();
     private String description;
-    private ArrayList<PlaceInfo> places = new ArrayList<>();
-
-    public TripPlan(String id, String title, Date startDate, Date endDate, String description, ArrayList<PlaceInfo> places) {
-        this.id = id;
-        this.title = title;
-        this.startDate = startDate;
-        this.endDate = endDate;
-        this.description = description;
-        this.places = places;
-    }
+    private ArrayList<Itinerary> itinerary = new ArrayList<>();
 
     public TripPlan(String id, String title) {
         this.id = id;
@@ -47,6 +46,7 @@ public class TripPlan {
         this.title = title;
     }
 
+    @Exclude
     public String getStartOnlyDate() {
         return new DateFormat().getDateOnly(startDate);
     }
@@ -55,6 +55,7 @@ public class TripPlan {
         this.startDate = startDate;
     }
 
+    @Exclude
     public String getEndOnlyDate() {
         return new DateFormat().getDateOnly(endDate);
     }
@@ -75,15 +76,99 @@ public class TripPlan {
         return description;
     }
 
+    public ArrayList<Itinerary> getItinerary() {
+        return itinerary;
+    }
+
+    public void setItinerary(ArrayList<Itinerary> itinerary) {
+        this.itinerary = itinerary;
+    }
+
     public void setDescription(String description) {
         this.description = description;
     }
 
-    public ArrayList<PlaceInfo> getPlaces() {
+    public void removeAndRearrange(int position)
+    {
+        this.itinerary.remove(position);
+
+        for (int i = 0; i < itinerary.size(); i++)
+        {
+            itinerary.get(i).setPosition(i);
+        }
+    }
+
+/*    public HashMap<String, Itinerary> getItineraryHash() {
+        return itineraryHash;
+    }
+
+    public void setItineraryHash(HashMap<String, Itinerary> itineraryHash) {
+        this.itineraryHash = itineraryHash;
+    }
+
+    @Exclude
+    public ArrayList<Itinerary> getItinerary() {
+        return itinerary;
+    }
+
+    public void setItinerary(ArrayList<Itinerary> itinerary) {
+        this.itinerary = itinerary;
+    }
+
+    private ArrayList<Itinerary> getItinerariesFromHash() {
+        if (itinerary == null) {
+            return new ArrayList<Itinerary>();
+        }
+
+        List<Map.Entry<String, Itinerary>> sortedItinerary =
+                new ArrayList<>(itineraryHash.entrySet());
+        sortedItinerary.sort(Map.Entry.comparingByValue(Comparator.comparingInt(Itinerary::getPosition)));
+
+        itinerary = new ArrayList<>();
+        for (Map.Entry<String, Itinerary> entry : sortedItinerary) {
+            itinerary.add(entry.getValue());
+        }
+
+        return itinerary;
+    }
+
+    public ArrayList<Itinerary> getItinerariesUnsorted() {
+        if (itineraryHash == null) {
+            return new ArrayList<Itinerary>();
+        }
+
+        ArrayList<Itinerary> places = new ArrayList<Itinerary>(itineraryHash.values());
+
         return places;
     }
 
-    public void setPlaces(ArrayList<PlaceInfo> places) {
-        this.places = places;
+    public void removeItinerary(int position)
+    {
+        for (Iterator<Map.Entry<String, Itinerary>> it = itineraryHash.entrySet().iterator(); it.hasNext();)
+        {
+            Map.Entry<String, Itinerary> entry = it.next();
+            if (entry.getValue().getPosition() == position)
+            {
+                it.remove();
+            }
+        }
+        rearrangeItineraryPositions();
     }
+
+    public void rearrangeItineraryPositions()
+    {
+        ArrayList<Itinerary> itineraries = new ArrayList<>(itineraryHash.values());
+        itineraries.sort(Comparator.comparing(Itinerary::getPosition));
+
+        for (int i = 0; i < itineraries.size(); i++) {
+            Itinerary it = itineraries.get(i);
+            int newPosition = i;
+
+            if (newPosition > 0 && it.getPosition() <= itineraries.get(newPosition - 1).getPosition()) {
+                newPosition = itineraries.get(newPosition - 1).getPosition() + 1;
+            }
+
+            it.setPosition(newPosition);
+        }
+    }*/
 }

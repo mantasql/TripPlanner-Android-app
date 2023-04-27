@@ -12,19 +12,19 @@ import android.widget.Toast;
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
 
+import com.example.tripplanner.models.Itinerary;
 import com.example.tripplanner.models.PlaceInfo;
-import com.example.tripplanner.models.TripPlan;
 
 import java.util.ArrayList;
 
-public class PlaceAdapter extends RecyclerView.Adapter<PlaceAdapter.ViewHolder>{
+public class ItineraryAdapter extends RecyclerView.Adapter<ItineraryAdapter.ViewHolder>{
 
-    private static final String TAG = "RecyclerViewAdapter";
-    private ArrayList<PlaceInfo> placeInfos = new ArrayList<>();
+    private static final String TAG = "ItineraryAdapter";
+    private ArrayList<Itinerary> itineraries;
     private Context mContext;
 
-    public PlaceAdapter(Context mContext, ArrayList<PlaceInfo> placeInfos) {
-        this.placeInfos = placeInfos;
+    public ItineraryAdapter(Context mContext, ArrayList<Itinerary> itineraries) {
+        this.itineraries = itineraries;
         this.mContext = mContext;
     }
 
@@ -39,20 +39,20 @@ public class PlaceAdapter extends RecyclerView.Adapter<PlaceAdapter.ViewHolder>{
     public void onBindViewHolder(@NonNull ViewHolder holder, int position) {
         Log.d(TAG, "onBindViewHolder: called.");
 
-        holder.destinationName.setText(placeInfos.get(holder.getAdapterPosition()).getName());
+        holder.destinationName.setText(itineraries.get(holder.getAdapterPosition()).getPlace().getName());
 
         holder.parentLayout.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
                 Log.d(TAG, "onClick: Clicked on item");
-                Toast.makeText(mContext, placeInfos.get(holder.getAdapterPosition()).getName(), Toast.LENGTH_SHORT).show();
+                Toast.makeText(mContext, itineraries.get(holder.getAdapterPosition()).getPlace().getName(), Toast.LENGTH_SHORT).show();
             }
         });
     }
 
     @Override
     public int getItemCount() {
-        return placeInfos.size();
+        return itineraries.size();
     }
 
     public class ViewHolder extends RecyclerView.ViewHolder {
