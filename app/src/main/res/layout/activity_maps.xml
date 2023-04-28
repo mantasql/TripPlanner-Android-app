@@ -43,6 +43,28 @@
         android:id="@+id/ic_gps"
         android:src="@drawable/ic_gps"/>
 
+    <ImageView
+        android:layout_width="40dp"
+        android:layout_height="40dp"
+        android:layout_below="@+id/relLayout1"
+        android:layout_alignParentLeft="true"
+        android:layout_marginRight="10dp"
+        android:layout_marginTop="10dp"
+        android:layout_marginLeft="10dp"
+        android:scaleType="centerCrop"
+        android:id="@+id/ic_driving"
+        android:src="@drawable/ic_driving"/>
+
+    <ImageView
+        android:id="@+id/ic_walking"
+        android:layout_width="40dp"
+        android:layout_height="40dp"
+        android:layout_below="@+id/ic_driving"
+        android:layout_marginTop="10dp"
+        android:layout_marginLeft="10dp"
+        android:scaleType="centerCrop"
+        android:src="@drawable/ic_walking" />
+
     <LinearLayout
         android:layout_width = "match_parent"
         android:layout_height = "200dp"

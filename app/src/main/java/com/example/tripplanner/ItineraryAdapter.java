@@ -16,6 +16,7 @@ import androidx.recyclerview.widget.RecyclerView;
 
 import com.example.tripplanner.models.Itinerary;
 import com.example.tripplanner.models.PlaceInfo;
+import com.google.android.gms.maps.model.LatLng;
 
 import java.util.ArrayList;
 
@@ -52,6 +53,11 @@ public class ItineraryAdapter extends RecyclerView.Adapter<ItineraryAdapter.View
                 Log.d(TAG, "onClick: Clicked on item");
                 Toast.makeText(mContext, itineraries.get(holder.getAdapterPosition()).getPlace().getName(), Toast.LENGTH_SHORT).show();
                 openLocationInfo(view, holder.getAdapterPosition());
+                if (mContext instanceof MapsActivity)
+                {
+                    ((MapsActivity)mContext).geoLocate(new LatLng(itineraries.get(holder.getAdapterPosition()).getPlace().getLatLng().getLatitude(),
+                                    itineraries.get(holder.getAdapterPosition()).getPlace().getLatLng().getLongitude()));
+                }
             }
         });
     }

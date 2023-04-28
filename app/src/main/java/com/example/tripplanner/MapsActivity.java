@@ -14,16 +14,19 @@ import android.Manifest;
 import android.app.AlertDialog;
 import android.content.pm.PackageManager;
 import android.graphics.Canvas;
+import android.graphics.Color;
 import android.graphics.Point;
 import android.location.Address;
 import android.location.Geocoder;
 import android.location.Location;
+import android.media.Image;
 import android.net.Uri;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
 import android.view.WindowManager;
 import android.widget.Button;
+import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -89,9 +92,13 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
 
     private static final String TAG = "MapsActivity";
     private static final int LOCATION_PERMISSION_REQUEST_CODE = 1234;
-    private static final float DEFAULT_ZOOM = 15f;
+    private static final float DEFAULT_ZOOM = 20f;
     private PlacesClient placesClient;
     private ImageView mGps;
+    private ImageView mDriving;
+    private ImageView mWalking;
+    private ImageView mBicycling;
+    private TravelMode travelMode = TravelMode.DRIVING;
     private AutocompleteSupportFragment autocompleteFragment;
     private RecyclerView tripsList;
     private Boolean mLocationPermissionsGranted = false;
@@ -111,6 +118,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     private ValueEventListener tripPlanDataListener;
     private User loggedInUser;
     private RecyclerView recyclerView;
+    private boolean init = true;
 
     ItemTouchHelper.SimpleCallback simpleCallback = new ItemTouchHelper.SimpleCallback(ItemTouchHelper.UP
             | ItemTouchHelper.DOWN | ItemTouchHelper.START | ItemTouchHelper.END, ItemTouchHelper.LEFT) {
@@ -180,6 +188,8 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         binding = ActivityMapsBinding.inflate(getLayoutInflater());
         setContentView(binding.getRoot());
         mGps = (ImageView) findViewById(R.id.ic_gps);
+        mDriving = (ImageView) findViewById(R.id.ic_driving);
+        mWalking = (ImageView) findViewById(R.id.ic_walking);
 
         tripsList = findViewById(R.id.TripsList);
 
@@ -212,9 +222,10 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                 tripPlan = snapshot.getValue(TripPlan.class);
                 tripPlan.getItinerary().sort(new ItineraryComparator());
 
-                direction();
+                direction(travelMode);
                 ItineraryAdapter adapter = new ItineraryAdapter(MapsActivity.this, tripPlan.getItinerary());
                 recyclerView.setAdapter(adapter);
+                init = false;
             }
 
             @Override
@@ -227,8 +238,6 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     private void initPlaces()
     {
         recyclerView = findViewById(R.id.TripsList);
-        //adapter = new ItineraryAdapter(this, tripPlan.getItineraries());
-        //recyclerView.setAdapter(adapter);
         recyclerView.setLayoutManager(new LinearLayoutManager(this));
         recyclerView.addItemDecoration(new DividerItemDecoration(recyclerView.getContext(), DividerItemDecoration.VERTICAL));
 
@@ -239,12 +248,33 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     private void init()
     {
         Log.d(TAG, "init: initializing");
+        mDriving.setBackgroundColor(getResources().getColor(com.google.android.libraries.places.R.color.quantum_googblue300));
 
         mGps.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
                 Log.d(TAG, "onClick: clicked gps icon");
                 getDeviceLocation();
+            }
+        });
+
+        mDriving.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                mDriving.setBackgroundColor(getResources().getColor(com.google.android.libraries.places.R.color.quantum_googblue300));
+                mWalking.setBackgroundColor(Color.TRANSPARENT);
+                travelMode = TravelMode.DRIVING;
+                direction(travelMode);
+            }
+        });
+
+        mWalking.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                mWalking.setBackgroundColor(getResources().getColor(com.google.android.libraries.places.R.color.quantum_googblue300));
+                mDriving.setBackgroundColor(Color.TRANSPARENT);
+                travelMode = TravelMode.WALKING;
+                direction(travelMode);
             }
         });
 
@@ -289,7 +319,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         hideSoftKeyboard();
     }
 
-    private void geoLocate(LatLng latLng) {
+    public void geoLocate(LatLng latLng) {
 
         Geocoder geocoder = new Geocoder(MapsActivity.this);
         List<Address> list = new ArrayList<>();
@@ -362,7 +392,10 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                             Log.d(TAG, "onComplete: found location");
                             currentLocation = (Location) task.getResult();
 
-                            planRef.addValueEventListener(tripPlanDataListener);
+                            if (init)
+                            {
+                                planRef.addValueEventListener(tripPlanDataListener);
+                            }
 
                             moveCamera(new LatLng(currentLocation.getLatitude(), currentLocation.getLongitude()), DEFAULT_ZOOM, "My location");
                         }
@@ -432,15 +465,8 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     private void moveCamera(LatLng latLng, float zoom, String title)
     {
         Log.d(TAG, "moveCamera: moving camera to lat: " + latLng.latitude + " lng: " + latLng.longitude);
-        mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(latLng, zoom));
-
-        mMap.clear();
-
-        if (!title.equals("My location"))
-        {
-            MarkerOptions markerOptions = new MarkerOptions().position(latLng).title(title);
-            mMap.addMarker(markerOptions);
-        }
+        //mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(latLng, zoom));
+        mMap.animateCamera(CameraUpdateFactory.newLatLngZoom(latLng, zoom));
 
         hideSoftKeyboard();
     }
@@ -491,7 +517,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         });
     }
 
-    private void direction()
+    private void direction(TravelMode travelMode)
     {
         mMap.clear();
 
@@ -507,7 +533,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                 .appendQueryParameter("destination", destinationLatLng.getLatitude() + ", " + destinationLatLng.getLongitude())
                 .appendQueryParameter("origin", currentLocation.getLatitude() + ", " + currentLocation.getLongitude())
                 .appendQueryParameter("key", BuildConfig.MAPS_API_KEY)
-                .appendQueryParameter("mode", "driving")
+                .appendQueryParameter("mode", travelMode.mode)
                 .appendQueryParameter("departure_time", "now");
 
         if (tripPlan.getItinerary().size() > 1)
@@ -568,8 +594,15 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                             polylineOptions.geodesic(true);
                         }
                         mMap.addPolyline(polylineOptions);
-                        mMap.addMarker(new MarkerOptions().position(new LatLng(-6.9249233, 107.6345122)).title("Marker 1"));
-                        mMap.addMarker(new MarkerOptions().position(new LatLng(-6.9218571, 107.6048254)).title("Marker 2"));
+
+                        for (int i = 0; i < tripPlan.getItinerary().size(); i++)
+                        {
+                            mMap.addMarker(new MarkerOptions().position(
+                                    new LatLng(tripPlan.getItinerary().get(i).getPlace().getLatLng().getLatitude(), tripPlan.getItinerary().get(i).getPlace().getLatLng().getLongitude()))
+                                    .title(tripPlan.getItinerary().get(i).getPlace().getName()));
+                        }
+/*                        mMap.addMarker(new MarkerOptions().position(new LatLng(-6.9249233, 107.6345122)).title("Marker 1"));
+                        mMap.addMarker(new MarkerOptions().position(new LatLng(-6.9218571, 107.6048254)).title("Marker 2"));*/
 
                         LatLngBounds bounds = new LatLngBounds.Builder()
                                 .include(new LatLng(destinationLatLng.getLatitude(), destinationLatLng.getLongitude()))
