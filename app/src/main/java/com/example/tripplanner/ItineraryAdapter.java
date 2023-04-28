@@ -1,10 +1,12 @@
 package com.example.tripplanner;
 
+import android.app.AlertDialog;
 import android.content.Context;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.Button;
 import android.widget.RelativeLayout;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -22,6 +24,9 @@ public class ItineraryAdapter extends RecyclerView.Adapter<ItineraryAdapter.View
     private static final String TAG = "ItineraryAdapter";
     private ArrayList<Itinerary> itineraries;
     private Context mContext;
+
+    private AlertDialog.Builder dialogBuilder;
+    private AlertDialog dialog;
 
     public ItineraryAdapter(Context mContext, ArrayList<Itinerary> itineraries) {
         this.itineraries = itineraries;
@@ -46,6 +51,7 @@ public class ItineraryAdapter extends RecyclerView.Adapter<ItineraryAdapter.View
             public void onClick(View view) {
                 Log.d(TAG, "onClick: Clicked on item");
                 Toast.makeText(mContext, itineraries.get(holder.getAdapterPosition()).getPlace().getName(), Toast.LENGTH_SHORT).show();
+                openLocationInfo(view, holder.getAdapterPosition());
             }
         });
     }
@@ -64,5 +70,38 @@ public class ItineraryAdapter extends RecyclerView.Adapter<ItineraryAdapter.View
             destinationName = itemView.findViewById(R.id.destination_name);
             parentLayout = itemView.findViewById(R.id.parent_layout);
         }
+    }
+
+    private void openLocationInfo(View view, int position)
+    {
+        dialogBuilder = new AlertDialog.Builder(view.getContext());
+        LayoutInflater li = (LayoutInflater) view.getContext().getSystemService(Context.LAYOUT_INFLATER_SERVICE);
+        final View locationPopupView = li.inflate(R.layout.fragment_location_info, null);
+
+        TextView locationName = locationPopupView.findViewById(R.id.location_info_text);
+        TextView addressText = locationPopupView.findViewById(R.id.address_info_text);
+        TextView phoneText = locationPopupView.findViewById(R.id.phone_info_text);
+        TextView ratingText = locationPopupView.findViewById(R.id.rating_info_text);
+        TextView priceLevelText = locationPopupView.findViewById(R.id.price_level_info_text);
+        TextView websiteText = locationPopupView.findViewById(R.id.website_info_text);
+        Button closeBtn = locationPopupView.findViewById(R.id.close_info_btn);
+
+        locationName.setText(itineraries.get(position).getPlace().getName());
+        addressText.setText(itineraries.get(position).getPlace().getAddress());
+        phoneText.setText(phoneText.getText() + itineraries.get(position).getPlace().getPhoneInfo());
+        ratingText.setText(ratingText.getText() + itineraries.get(position).getPlace().getRatingInfo());
+        priceLevelText.setText(priceLevelText.getText() + itineraries.get(position).getPlace().getPriceLevelInfo());
+        websiteText.setText(websiteText.getText() + itineraries.get(position).getPlace().getWebsiteInfo());
+
+        dialogBuilder.setView(locationPopupView);
+        dialog = dialogBuilder.create();
+        dialog.show();
+
+        closeBtn.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                dialog.dismiss();
+            }
+        });
     }
 }

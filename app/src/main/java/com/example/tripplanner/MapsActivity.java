@@ -96,6 +96,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     private RecyclerView tripsList;
     private Boolean mLocationPermissionsGranted = false;
     private GoogleMap mMap;
+    private Location currentLocation;
     private ActivityMapsBinding binding;
     private FusedLocationProviderClient fusedLocationProviderClient;
     //private ItineraryAdapter adapter;
@@ -107,6 +108,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
 
     private DatabaseReference mDatabase;
     private DatabaseReference planRef;
+    private ValueEventListener tripPlanDataListener;
     private User loggedInUser;
     private RecyclerView recyclerView;
 
@@ -172,7 +174,8 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
-        placeFields = Arrays.asList(Place.Field.ID, Place.Field.NAME, Place.Field.LAT_LNG, Place.Field.ADDRESS, Place.Field.ICON_URL, Place.Field.WEBSITE_URI, Place.Field.RATING);
+        placeFields = Arrays.asList(Place.Field.ID, Place.Field.NAME, Place.Field.LAT_LNG, Place.Field.ADDRESS, Place.Field.ICON_URL,
+                Place.Field.WEBSITE_URI, Place.Field.RATING, Place.Field.PHONE_NUMBER, Place.Field.PRICE_LEVEL);
 
         binding = ActivityMapsBinding.inflate(getLayoutInflater());
         setContentView(binding.getRoot());
@@ -203,12 +206,13 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         planRef = mDatabase.child("users").child(user.getUid()).child("plans").child(planNo);
         initPlaces();
 
-        planRef.addValueEventListener(new ValueEventListener() {
+        tripPlanDataListener = new ValueEventListener() {
             @Override
             public void onDataChange(@NonNull DataSnapshot snapshot) {
                 tripPlan = snapshot.getValue(TripPlan.class);
                 tripPlan.getItinerary().sort(new ItineraryComparator());
 
+                direction();
                 ItineraryAdapter adapter = new ItineraryAdapter(MapsActivity.this, tripPlan.getItinerary());
                 recyclerView.setAdapter(adapter);
             }
@@ -217,7 +221,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
             public void onCancelled(@NonNull DatabaseError error) {
                 Log.d(TAG, "onComplete: Error getting data: " + error.getMessage());
             }
-        });
+        };
     }
 
     private void initPlaces()
@@ -252,8 +256,6 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
 
             @Override
             public void onPlaceSelected(@NonNull Place place) {
-                Log.d(TAG, "Place: " + place.getName() + ", " + place.getId());
-                Log.d(TAG, "onPlaceSelected: " + place.getAddress() + "," + place.getLatLng() + "," + place.getName());
                 geoLocate(place.getLatLng());
                 openLocationInfo(new PlaceInfo(place));
             }
@@ -266,13 +268,9 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
 
                 placesClient.fetchPlace(request).addOnSuccessListener((response) -> {
                    Place place = response.getPlace();
-                   Log.d(TAG, "onPoiClick: Found place!!!: " + place.getName());
-                   Log.d(TAG, "onPoiClick: place url: " + place.getWebsiteUri());
 
-/*                   openLocationInfo(place);
-                   places.add(place);*/
-
-                   direction();
+                   geoLocate(place.getLatLng());
+                   openLocationInfo(new PlaceInfo(place));
 
                 }).addOnFailureListener((exception) ->{
                     if (exception instanceof ApiException)
@@ -362,7 +360,9 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                         if (task.isSuccessful())
                         {
                             Log.d(TAG, "onComplete: found location");
-                            Location currentLocation = (Location) task.getResult();
+                            currentLocation = (Location) task.getResult();
+
+                            planRef.addValueEventListener(tripPlanDataListener);
 
                             moveCamera(new LatLng(currentLocation.getLatitude(), currentLocation.getLongitude()), DEFAULT_ZOOM, "My location");
                         }
@@ -493,16 +493,37 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
 
     private void direction()
     {
+        mMap.clear();
+
+        if (tripPlan.getItinerary().size() == 0)
+        {
+            return;
+        }
+
+        com.example.tripplanner.models.LatLng destinationLatLng = tripPlan.getItinerary().get(tripPlan.getItinerary().size() - 1).getPlace().getLatLng();
         RequestQueue requestQueue = Volley.newRequestQueue(this);
-        String url = Uri.parse("https://maps.googleapis.com/maps/api/directions/json")
+        Uri.Builder urlBuilder = Uri.parse("https://maps.googleapis.com/maps/api/directions/json")
                 .buildUpon()
-                .appendQueryParameter("destination", "54.6871627, 25.2795778")
-                .appendQueryParameter("origin", "55.7348803, 24.357187900000003")
-                .appendQueryParameter("mode", "driving")
-                .appendQueryParameter("departure_time", "now")
-                //.appendQueryParameter("waypoints", "Ukmergė")
+                .appendQueryParameter("destination", destinationLatLng.getLatitude() + ", " + destinationLatLng.getLongitude())
+                .appendQueryParameter("origin", currentLocation.getLatitude() + ", " + currentLocation.getLongitude())
                 .appendQueryParameter("key", BuildConfig.MAPS_API_KEY)
-                .toString();
+                .appendQueryParameter("mode", "driving")
+                .appendQueryParameter("departure_time", "now");
+
+        if (tripPlan.getItinerary().size() > 1)
+        {
+            StringBuilder stopOversSB = new StringBuilder();
+            for (int i = 0 ; i < tripPlan.getItinerary().size() - 1; i++)
+            {
+                com.example.tripplanner.models.LatLng dest =  tripPlan.getItinerary().get(i).getPlace().getLatLng();
+                stopOversSB.append(dest.getLatitude() + "," + dest.getLongitude() + "|");
+            }
+            stopOversSB.deleteCharAt(stopOversSB.length() - 1);
+            urlBuilder.appendQueryParameter("waypoints", stopOversSB.toString());
+        }
+
+        String url = urlBuilder.toString();
+
         JsonObjectRequest jsonObjectRequest = new JsonObjectRequest(Request.Method.GET, url, null, new Response.Listener<JSONObject>() {
             @Override
             public void onResponse(JSONObject response) {
@@ -526,8 +547,8 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                             {
                                 JSONArray steps = legs.getJSONObject(j).getJSONArray("steps");
 
-                                String durationInTraffic = legs.getJSONObject(j).optJSONObject("duration_in_traffic").getString("text");
-                                Log.d(TAG, "onResponse: duration In Traffic: " + durationInTraffic);
+                                String duration = legs.getJSONObject(j).optJSONObject("duration").getString("text");
+                                Log.d(TAG, "onResponse: duration: " + duration);
 
                                 for (int k = 0; k < steps.length(); k++)
                                 {
@@ -551,8 +572,8 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                         mMap.addMarker(new MarkerOptions().position(new LatLng(-6.9218571, 107.6048254)).title("Marker 2"));
 
                         LatLngBounds bounds = new LatLngBounds.Builder()
-                                .include(new LatLng(54.6871627, 25.2795778))
-                                .include(new LatLng(55.7348803, 24.357187900000003))
+                                .include(new LatLng(destinationLatLng.getLatitude(), destinationLatLng.getLongitude()))
+                                .include(new LatLng(currentLocation.getLatitude(), currentLocation.getLongitude()))
                                 .build();
 
                         Point point = new Point();
