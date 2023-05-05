@@ -1,0 +1,73 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content">
+
+    <!-- TODO: Update blank fragment layout -->
+    <TextView
+        android:id="@+id/add_time_label"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Add approx. time in location"
+        android:textAlignment="center"
+        android:layout_marginTop="30dp"
+        android:textSize="20sp"/>
+
+    <RelativeLayout
+        android:id="@+id/relLayout2"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_below="@id/add_time_label">
+
+    <EditText
+        android:id="@+id/add_time_edit_text"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+
+        android:layout_marginHorizontal="120dp"
+        android:layout_centerHorizontal="true"
+        android:layout_marginTop="20dp"
+        android:textAlignment="center"
+        android:textSize="18sp" />
+
+        <ImageView
+            android:id="@+id/time_clear_btn"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_centerVertical="true"
+            android:layout_marginVertical="30dp"
+            android:layout_alignStart="@id/add_time_edit_text"
+            android:layout_marginStart="100dp"
+            android:src="@drawable/ic_clear" />
+
+</RelativeLayout>
+
+    <Button
+        android:id="@+id/save_time_btn"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Save"
+        android:layout_centerHorizontal="true"
+        android:layout_below="@id/relLayout2"
+        android:layout_marginHorizontal="70dp"
+        android:layout_marginTop="20dp"
+        android:layout_marginBottom="20dp"
+        android:layout_alignParentStart="true"/>
+
+
+    <Button
+        android:id="@+id/add_time_cancel"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Cancel"
+        android:layout_marginHorizontal="70dp"
+        android:layout_marginTop="20dp"
+        android:layout_marginBottom="20dp"
+        android:layout_centerHorizontal="true"
+        android:layout_below="@id/relLayout2"
+
+        android:layout_alignParentEnd="true"/>
+
+</RelativeLayout>

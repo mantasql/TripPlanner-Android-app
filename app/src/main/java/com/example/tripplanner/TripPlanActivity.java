@@ -34,6 +34,8 @@ import com.google.firebase.database.Query;
 import com.google.firebase.database.ValueEventListener;
 
 import java.text.ParseException;
+import java.util.HashMap;
+import java.util.Map;
 
 public class TripPlanActivity extends AppCompatActivity {
 
@@ -42,6 +44,7 @@ public class TripPlanActivity extends AppCompatActivity {
     private EditText startDate;
     private EditText endDate;
     private EditText description;
+    private TextView tripDuration;
     private ImageView mapsBtn;
     private TripPlan tripPlan;
     private FirebaseUser user;
@@ -61,6 +64,7 @@ public class TripPlanActivity extends AppCompatActivity {
         this.endDate = findViewById(R.id.edittext_end_date);
         this.description = findViewById(R.id.edittext_description);
         this.mapsBtn = findViewById(R.id.goto_maps_btn);
+        this.tripDuration = findViewById(R.id.approx_duration);
 
         mDatabase = FirebaseDatabase.getInstance().getReference();
     }
@@ -165,10 +169,12 @@ public class TripPlanActivity extends AppCompatActivity {
                 tripPlan = snapshot.getValue(TripPlan.class);
                 if (tripPlan != null)
                 {
+                    String durationText = "Trip duration ≈ ";
                     planName.setText(tripPlan.getTitle(), TextView.BufferType.EDITABLE);
                     startDate.setText(tripPlan.getStartOnlyDate(), TextView.BufferType.EDITABLE);
                     endDate.setText(tripPlan.getEndOnlyDate(), TextView.BufferType.EDITABLE);
                     description.setText(tripPlan.getDescription(), TextView.BufferType.EDITABLE);
+                    tripDuration.setText(durationText + tripPlan.getTripDuration());
                     Log.d(TAG, "onDataChange: tripPlan: " + tripPlan);
                     itineraryAdapter = new ItineraryAdapter(TripPlanActivity.this, tripPlan.getItinerary());
                     recyclerView.setAdapter(itineraryAdapter);
@@ -242,5 +248,12 @@ public class TripPlanActivity extends AppCompatActivity {
         }, 2023, 0, 1);
 
         dialog.show();
+    }
+
+    public void saveTime(int value, int position)
+    {
+        Map<String, Object> update = new HashMap<String, Object>();
+        update.put("extraDurationValue", value);
+        planRef.child("itinerary").child(String.valueOf(position)).updateChildren(update);
     }
 }

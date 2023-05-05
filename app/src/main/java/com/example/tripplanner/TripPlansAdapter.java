@@ -40,6 +40,8 @@ public class TripPlansAdapter extends RecyclerView.Adapter<TripPlansAdapter.View
         Log.d(TAG, "onBindViewHolder: called.");
 
         holder.destinationName.setText(tripPlans.get(holder.getAdapterPosition()).getTitle());
+
+        holder.duration.setText("");
         
         holder.parentLayout.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -61,12 +63,14 @@ public class TripPlansAdapter extends RecyclerView.Adapter<TripPlansAdapter.View
 
     public class ViewHolder extends RecyclerView.ViewHolder {
 
+        TextView duration;
         TextView destinationName;
         RelativeLayout parentLayout;
         public ViewHolder(@NonNull View itemView) {
             super(itemView);
             destinationName = itemView.findViewById(R.id.destination_name);
             parentLayout = itemView.findViewById(R.id.parent_layout);
+            duration = itemView.findViewById(R.id.duration_text);
         }
     }
 }

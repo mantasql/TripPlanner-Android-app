@@ -85,6 +85,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import it.xabaras.android.recyclerview.swipedecorator.RecyclerViewSwipeDecorator;
 
@@ -119,6 +120,8 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     private User loggedInUser;
     private RecyclerView recyclerView;
     private boolean init = true;
+
+    private ArrayList<String> durations = new ArrayList<>();
 
     ItemTouchHelper.SimpleCallback simpleCallback = new ItemTouchHelper.SimpleCallback(ItemTouchHelper.UP
             | ItemTouchHelper.DOWN | ItemTouchHelper.START | ItemTouchHelper.END, ItemTouchHelper.LEFT) {
@@ -223,8 +226,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                 tripPlan.getItinerary().sort(new ItineraryComparator());
 
                 direction(travelMode);
-                ItineraryAdapter adapter = new ItineraryAdapter(MapsActivity.this, tripPlan.getItinerary());
-                recyclerView.setAdapter(adapter);
+                updateRecyclerView();
                 init = false;
             }
 
@@ -574,6 +576,10 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                                 JSONArray steps = legs.getJSONObject(j).getJSONArray("steps");
 
                                 String duration = legs.getJSONObject(j).optJSONObject("duration").getString("text");
+                                String durationValue = legs.getJSONObject(j).optJSONObject("duration").getString("value");
+                                tripPlan.getItinerary().get(j).setDuration(duration);
+                                tripPlan.getItinerary().get(j).setDurationValue(Integer.valueOf(durationValue));
+                                //durations.add(duration);
                                 Log.d(TAG, "onResponse: duration: " + duration);
 
                                 for (int k = 0; k < steps.length(); k++)
@@ -601,8 +607,6 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                                     new LatLng(tripPlan.getItinerary().get(i).getPlace().getLatLng().getLatitude(), tripPlan.getItinerary().get(i).getPlace().getLatLng().getLongitude()))
                                     .title(tripPlan.getItinerary().get(i).getPlace().getName()));
                         }
-/*                        mMap.addMarker(new MarkerOptions().position(new LatLng(-6.9249233, 107.6345122)).title("Marker 1"));
-                        mMap.addMarker(new MarkerOptions().position(new LatLng(-6.9218571, 107.6048254)).title("Marker 2"));*/
 
                         LatLngBounds bounds = new LatLngBounds.Builder()
                                 .include(new LatLng(destinationLatLng.getLatitude(), destinationLatLng.getLongitude()))
@@ -612,6 +616,10 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                         Point point = new Point();
                         getWindowManager().getDefaultDisplay().getSize(point);
                         mMap.animateCamera(CameraUpdateFactory.newLatLngBounds(bounds, point.x, 150, 30));
+
+                        Map<String, Object> update = new HashMap<String, Object>();
+                        update.put("itinerary", tripPlan.getItinerary());
+                        planRef.updateChildren(update);
                     }
                 } catch (JSONException e)
                 {
@@ -664,5 +672,11 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
             Log.i("Location", "Point sent: Latitude: "+poly.get(i).latitude+" Longitude: "+poly.get(i).longitude);
         }
         return poly;
+    }
+
+    private void updateRecyclerView()
+    {
+        ItineraryAdapter adapter = new ItineraryAdapter(MapsActivity.this, tripPlan.getItinerary());
+        recyclerView.setAdapter(adapter);
     }
 }

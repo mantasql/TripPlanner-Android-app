@@ -44,8 +44,6 @@ public class MainActivity extends AppCompatActivity {
 
     private FirebaseAuth mAuth;
     private TripPlansAdapter adapter;
-
-    private ArrayList<String> dummyData = new ArrayList<>();
     private DatabaseReference mDatabase;
     private User loggedInUser;
 

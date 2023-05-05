@@ -98,6 +98,50 @@ public class TripPlan {
         }
     }
 
+    @Exclude
+    public String getTripDuration()
+    {
+        int hours;
+        int minutes;
+        Integer v;
+        int value = 0;
+
+        for(int i = 0; i < itinerary.size(); i++)
+        {
+            v = itinerary.get(i).getDurationValue();
+            if (v == null)
+            {
+                return "X";
+            }
+
+            value += v + itinerary.get(i).getExtraDurationValue();
+        }
+
+        hours = value / 3600;
+        minutes = (value % 3600) / 60;
+
+        String dur = "X";
+
+        if (hours < 1 && minutes < 2)
+        {
+            dur = minutes + " min";
+        }
+        else if (hours < 1)
+        {
+            dur = minutes + " mins";
+        }
+        else if (minutes < 2)
+        {
+            dur = hours + " h " + minutes + " min";
+        }
+        else
+        {
+            dur = hours + " h " + minutes + " mins";
+        }
+
+        return dur;
+    }
+
 /*    public HashMap<String, Itinerary> getItineraryHash() {
         return itineraryHash;
     }
