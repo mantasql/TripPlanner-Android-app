@@ -18,6 +18,7 @@ import android.widget.Toast;
 
 import com.example.tripplanner.models.TripPlan;
 import com.example.tripplanner.models.User;
+import com.example.tripplanner.models.Weather;
 import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.GoogleApiAvailability;
 import com.google.android.gms.tasks.OnCompleteListener;
@@ -33,6 +34,9 @@ import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.ValueEventListener;
 
+import org.json.JSONException;
+
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -54,6 +58,15 @@ public class MainActivity extends AppCompatActivity {
 
         mAuth = FirebaseAuth.getInstance();
         mDatabase = FirebaseDatabase.getInstance().getReference();
+
+        WeatherFetcher fetcher = new WeatherFetcher(BuildConfig.WEATHER_API_KEY, new IWeatherDataListener() {
+            @Override
+            public void onDataReceived(Weather weather) {
+                Log.d(TAG, "onDataReceived: Weather data: " + weather.getCity() + " " + weather.getTemperature());
+            }
+        });
+
+        fetcher.fetchWeather("Vilnius");
     }
 
     @Override

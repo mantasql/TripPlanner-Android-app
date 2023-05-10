@@ -6,10 +6,13 @@ plugins {
 
 android {
     namespace 'com.example.tripplanner'
-    compileSdk 33
+    compileSdk 32
 
     defaultConfig {
         applicationId "com.example.tripplanner"
+        Properties properties = new Properties()
+        properties.load(project.rootProject.file('local.properties').newDataInputStream())
+        buildConfigField "String", "WEATHER_API_KEY", "\"${properties.getProperty('WEATHER_API_KEY')}\""
         minSdk 24
         targetSdk 33
         versionCode 1
@@ -31,6 +34,7 @@ android {
     buildFeatures {
         viewBinding true
     }
+    buildToolsVersion '33.0.2'
 }
 
 dependencies {
