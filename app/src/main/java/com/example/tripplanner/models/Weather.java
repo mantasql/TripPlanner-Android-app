@@ -6,14 +6,19 @@ public class Weather {
     private String temperature;
     private String humidity;
     private String wind;
+    private String description;
+    private String region;
+    private String country;
 
-    public Weather(String city, String weatherIcon, String temperature, String humidity, String wind) {
+    public Weather(String city, String weatherIcon, String temperature, String humidity, String wind, String description, String region, String country) {
         this.city = city;
         this.weatherIcon = weatherIcon;
         this.temperature = temperature;
         this.humidity = humidity;
         this.wind = wind;
-        //this.weatherDescription = weatherDescription;
+        this.description = description;
+        this.region = region;
+        this.country = country;
     }
 
     public Weather() {
@@ -37,5 +42,17 @@ public class Weather {
 
     public String getWind() {
         return wind;
+    }
+
+    public String getDescription() {
+        return description;
+    }
+
+    public String getRegion() {
+        return region;
+    }
+
+    public String getCountry() {
+        return country;
     }
 }

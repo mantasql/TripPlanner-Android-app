@@ -23,7 +23,84 @@
         android:layout_marginTop="20dp"
         android:text="Address"
         android:textAlignment="center"
-        android:textSize="18sp" />
+        android:textSize="18sp"
+        android:layout_marginBottom="20dp"/>
+
+    <RelativeLayout
+        android:id="@+id/weatherRelLayout"
+        android:layout_height="wrap_content"
+        android:layout_width="match_parent"
+        android:layout_below="@id/address_text"
+        android:background="#2B2A2A"
+        android:layout_marginHorizontal="10dp">
+
+        <TextView
+            android:id="@+id/weather_in_city"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_centerHorizontal="true"
+            android:layout_marginTop="10dp"
+            android:textSize="22sp"
+            android:text="Weather in city"
+            android:textColor="#EDEDED"/>
+
+        <TextView
+            android:id="@+id/weather_wind"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="20dp"
+            android:layout_marginLeft="40dp"
+            android:textSize="18sp"
+            android:text="Wind"
+            android:textColor="#EDEDED"
+            android:layout_below="@id/weather_in_city"/>
+
+        <TextView
+            android:id="@+id/weather_temp"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="10dp"
+            android:layout_marginLeft="40dp"
+            android:textSize="18sp"
+            android:text="Temperature:"
+            android:textColor="#EDEDED"
+            android:layout_below="@id/weather_wind"/>
+
+        <TextView
+            android:id="@+id/weather_humidity"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="10dp"
+            android:layout_marginLeft="40dp"
+            android:textSize="18sp"
+            android:text="Humidity:"
+            android:textColor="#EDEDED"
+            android:layout_below="@id/weather_temp"/>
+
+        <TextView
+            android:id="@+id/weather_description"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="10dp"
+            android:layout_marginLeft="40dp"
+            android:textSize="18sp"
+            android:text="Status:"
+            android:textColor="#EDEDED"
+            android:layout_below="@id/weather_humidity"
+            android:layout_marginBottom="20dp"/>
+
+        <ImageView
+            android:id="@+id/weather_icon"
+            android:layout_width="32dp"
+            android:layout_height="32dp"
+            android:textSize="18sp"
+            android:layout_marginTop="8dp"
+            android:textColor="#EDEDED"
+            android:layout_below="@id/weather_humidity"
+            android:layout_toEndOf="@id/weather_description"
+            android:layout_marginBottom="20dp"/>
+
+    </RelativeLayout>
 
     <Button
         android:id="@+id/add_location"
@@ -31,7 +108,7 @@
         android:layout_height="wrap_content"
         android:text="Add location"
         android:layout_centerHorizontal="true"
-        android:layout_below="@id/address_text"
+        android:layout_below="@id/weatherRelLayout"
         android:layout_marginHorizontal="40dp"
         android:layout_marginTop="20dp"
         android:layout_marginBottom="20dp"
@@ -47,7 +124,7 @@
         android:layout_marginTop="20dp"
         android:layout_marginBottom="20dp"
         android:layout_centerHorizontal="true"
-        android:layout_below="@id/address_text"
+        android:layout_below="@id/weatherRelLayout"
 
         android:layout_alignParentEnd="true"/>
 

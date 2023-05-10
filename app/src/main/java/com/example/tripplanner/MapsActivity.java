@@ -39,10 +39,12 @@ import com.android.volley.RetryPolicy;
 import com.android.volley.VolleyError;
 import com.android.volley.toolbox.JsonObjectRequest;
 import com.android.volley.toolbox.Volley;
+import com.bumptech.glide.Glide;
 import com.example.tripplanner.models.Itinerary;
 import com.example.tripplanner.models.PlaceInfo;
 import com.example.tripplanner.models.TripPlan;
 import com.example.tripplanner.models.User;
+import com.example.tripplanner.models.Weather;
 import com.example.tripplanner.utils.ItineraryComparator;
 import com.google.android.gms.common.api.ApiException;
 import com.google.android.gms.common.api.Status;
@@ -483,8 +485,27 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
 
         TextView locationName = locationPopupView.findViewById(R.id.location_text);
         TextView addressText = locationPopupView.findViewById(R.id.address_text);
+        TextView city = locationPopupView.findViewById(R.id.weather_in_city);
+        TextView wind = locationPopupView.findViewById(R.id.weather_wind);
+        TextView temperature = locationPopupView.findViewById(R.id.weather_temp);
+        TextView humidity = locationPopupView.findViewById(R.id.weather_humidity);
+        TextView description = locationPopupView.findViewById(R.id.weather_description);
+        ImageView weatherIcon = locationPopupView.findViewById(R.id.weather_icon);
         Button addLocationBtn = locationPopupView.findViewById(R.id.add_location);
         Button addLocationCancelBtn = locationPopupView.findViewById(R.id.add_location_cancel);
+
+        WeatherFetcher fetcher = new WeatherFetcher(BuildConfig.WEATHER_API_KEY, new IWeatherDataListener() {
+            @Override
+            public void onDataReceived(Weather weather) {
+                city.setText(weather.getCity());
+                wind.setText(weather.getWind());
+                temperature.setText(weather.getTemperature());
+                humidity.setText(weather.getHumidity());
+                description.setText(weather.getDescription());
+                Glide.with(locationPopupView).load(weather.getWeatherIcon()).into(weatherIcon);
+            }
+        });
+        fetcher.fetchWeather(place.getAddress());
 
         locationName.setText(place.getName());
         addressText.setText(place.getAddress());
@@ -505,7 +526,6 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                         dialog.dismiss();
                     }
                 });
-
             }
         });
 

@@ -33,7 +33,6 @@ public class ItineraryAdapter extends RecyclerView.Adapter<ItineraryAdapter.View
     private static final String TAG = "ItineraryAdapter";
     private ArrayList<Itinerary> itineraries;
     private Context mContext;
-
     private AlertDialog.Builder dialogBuilder;
     private AlertDialog dialog;
     private Integer extraTimeValue = 0;

@@ -87,6 +87,6 @@ public class WeatherFetcher extends AsyncTask<String, Void, JsonObject> {
         String humidity = String.format("Humidity: %d%%", humidityVal);
         String wind = String.format("Wind speed: %dkm/h", wind_kph);
 
-        return new Weather(city, weatherIcon, temp, humidity, wind);
+        return new Weather(city, weatherIcon, temp, humidity, wind, text, region, country);
     }
 }
