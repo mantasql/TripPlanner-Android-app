@@ -48,7 +48,7 @@ public class TripPlansAdapter extends RecyclerView.Adapter<TripPlansAdapter.View
             public void onClick(View view) {
                 Log.d(TAG, "onClick: Clicked on item");
                 Toast.makeText(mContext, tripPlans.get(holder.getAdapterPosition()).getTitle(), Toast.LENGTH_SHORT).show();
-                Intent intent = new Intent(view.getContext(), TripPlanActivity.class);
+                Intent intent = new Intent(view.getContext(), TripPlanActivityWindow.class);
                 Log.d(TAG, "onClick: my id: " + tripPlans.get(holder.getAdapterPosition()).getId());
                 intent.putExtra("planNo", tripPlans.get(holder.getAdapterPosition()).getId());
                 view.getContext().startActivity(intent);

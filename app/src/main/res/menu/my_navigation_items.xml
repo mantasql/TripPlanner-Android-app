@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android">
+    <item android:id="@+id/group_trip"
+        android:icon="@drawable/ic_group_trip"
+        android:title="Group" />
+    <item android:id="@+id/goto_maps_btn"
+        android:icon="@drawable/ic_map"
+        android:title="Map" />
+</menu>

@@ -17,6 +17,9 @@
         android:theme="@style/Theme.TripPlanner"
         tools:targetApi="31">
         <activity
+            android:name=".TripPlanActivityWindow"
+            android:exported="false" />
+        <activity
             android:name=".TripPlanActivity"
             android:exported="false" />
         <activity

@@ -2,6 +2,7 @@ package com.example.tripplanner;
 
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.fragment.app.Fragment;
 import androidx.recyclerview.widget.DividerItemDecoration;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
@@ -24,6 +25,7 @@ import com.example.tripplanner.models.TripPlan;
 import com.example.tripplanner.utils.DateFormat;
 import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.Task;
+import com.google.android.material.bottomnavigation.BottomNavigationView;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.database.DataSnapshot;
@@ -45,7 +47,6 @@ public class TripPlanActivity extends AppCompatActivity {
     private EditText endDate;
     private EditText description;
     private TextView tripDuration;
-    private ImageView mapsBtn;
     private TripPlan tripPlan;
     private FirebaseUser user;
     private ItineraryAdapter itineraryAdapter;
@@ -63,8 +64,11 @@ public class TripPlanActivity extends AppCompatActivity {
         this.startDate = findViewById(R.id.edittext_start_date);
         this.endDate = findViewById(R.id.edittext_end_date);
         this.description = findViewById(R.id.edittext_description);
-        this.mapsBtn = findViewById(R.id.goto_maps_btn);
         this.tripDuration = findViewById(R.id.approx_duration);
+
+        BottomNavigationView bottomNav = findViewById(R.id.navigation);
+        bottomNav.setOnNavigationItemSelectedListener(navListener);
+        //getSupportFragmentManager().beginTransaction().replace(R.id.fragment_container, new TripPlanFragment()).commit();
 
         mDatabase = FirebaseDatabase.getInstance().getReference();
     }
@@ -141,14 +145,14 @@ public class TripPlanActivity extends AppCompatActivity {
             }
         });
 
-        mapsBtn.setOnClickListener(new View.OnClickListener() {
+/*        mapsBtn.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
                 Intent intent = new Intent(TripPlanActivity.this, MapsActivity.class);
                 intent.putExtra("planNo", tripPlan.getId());
                 startActivity(intent);
             }
-        });
+        });*/
     }
 
     private void listenToDataChange()
@@ -187,6 +191,23 @@ public class TripPlanActivity extends AppCompatActivity {
             }
         });
     }
+
+    private final BottomNavigationView.OnNavigationItemSelectedListener navListener = item -> {
+        Fragment selectedFragment = null;
+        int itemId = item.getItemId();
+        if (itemId == R.id.goto_maps_btn) {
+            Intent intent = new Intent(TripPlanActivity.this, MapsActivity.class);
+            intent.putExtra("planNo", tripPlan.getId());
+            startActivity(intent);
+        } else if (itemId == R.id.group_trip) {
+            selectedFragment = new TripPlanFragment();
+        }
+
+        if (selectedFragment != null) {
+            getSupportFragmentManager().beginTransaction().replace(R.id.fragment_container, selectedFragment).commit();
+        }
+        return true;
+    };
 
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {

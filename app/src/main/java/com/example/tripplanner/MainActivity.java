@@ -58,15 +58,6 @@ public class MainActivity extends AppCompatActivity {
 
         mAuth = FirebaseAuth.getInstance();
         mDatabase = FirebaseDatabase.getInstance().getReference();
-
-        WeatherFetcher fetcher = new WeatherFetcher(BuildConfig.WEATHER_API_KEY, new IWeatherDataListener() {
-            @Override
-            public void onDataReceived(Weather weather) {
-                Log.d(TAG, "onDataReceived: Weather data: " + weather.getCity() + " " + weather.getTemperature());
-            }
-        });
-
-        fetcher.fetchWeather("Vilnius");
     }
 
     @Override
@@ -137,7 +128,7 @@ public class MainActivity extends AppCompatActivity {
         btnMap.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                Intent intent = new Intent(MainActivity.this, TripPlanActivity.class);
+                Intent intent = new Intent(MainActivity.this, TripPlanActivityWindow.class);
                 intent.putExtra("planNo", "-1");
                 startActivity(intent);
             }
