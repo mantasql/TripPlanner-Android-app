@@ -45,7 +45,7 @@ public class ItineraryAdapter extends RecyclerView.Adapter<ItineraryAdapter.View
     @NonNull
     @Override
     public ViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
-        if (mContext instanceof TripPlanActivity)
+        if (mContext instanceof TripPlanActivityWindow)
         {
             View view = LayoutInflater.from(parent.getContext()).inflate(R.layout.layout_tripplan_listitem, parent, false);
             return new ViewHolder(view);
@@ -74,7 +74,7 @@ public class ItineraryAdapter extends RecyclerView.Adapter<ItineraryAdapter.View
             holder.duration.setText(itineraries.get(holder.getAdapterPosition()).getOverallDuration());
         }
 
-        if (mContext instanceof TripPlanActivity)
+        if (mContext instanceof TripPlanActivityWindow)
         {
             holder.addTimeBtn.setOnClickListener(new View.OnClickListener() {
                 @Override
@@ -186,9 +186,9 @@ public class ItineraryAdapter extends RecyclerView.Adapter<ItineraryAdapter.View
             @Override
             public void onClick(View view) {
                 timeText.setText("0");
-                if (mContext instanceof TripPlanActivity)
+                if (mContext instanceof TripPlanActivityWindow)
                 {
-                    ((TripPlanActivity)mContext).saveTime(0,position);
+                    ((TripPlanActivityWindow)mContext).saveTime(0,position);
                 }
             }
         });
@@ -197,9 +197,9 @@ public class ItineraryAdapter extends RecyclerView.Adapter<ItineraryAdapter.View
             @Override
             public void onClick(View view) {
 
-                if (mContext instanceof TripPlanActivity)
+                if (mContext instanceof TripPlanActivityWindow)
                 {
-                    ((TripPlanActivity)mContext).saveTime(extraTimeValue,position);
+                    ((TripPlanActivityWindow)mContext).saveTime(extraTimeValue,position);
                 }
 
                 dialog.dismiss();

@@ -25,6 +25,7 @@ public class TripPlan {
     private Date endDate = new Date();
     private String description;
     private ArrayList<Itinerary> itinerary = new ArrayList<>();
+    private ArrayList<String> tripFriends = new ArrayList<>();
 
     public TripPlan(String id, String title) {
         this.id = id;
@@ -86,6 +87,14 @@ public class TripPlan {
 
     public void setDescription(String description) {
         this.description = description;
+    }
+
+    public ArrayList<String> getTripFriends() {
+        return tripFriends;
+    }
+
+    public void setTripFriends(ArrayList<String> tripFriends) {
+        this.tripFriends = tripFriends;
     }
 
     public void removeAndRearrange(int position)

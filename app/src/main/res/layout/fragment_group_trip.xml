@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    tools:context=".GroupTripFragment">
+
+    <LinearLayout
+        android:id="@+id/budget_header"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:weightSum="100">
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="60dp"
+            android:gravity="center"
+            android:textAlignment="center"
+            android:text="Trip friends"
+            android:textStyle="bold"
+            android:textSize="18sp"
+            android:id="@+id/group_friend_text"
+            android:background="@drawable/budget_border"
+            android:layout_weight="33.3"/>
+
+        <TextView
+            android:layout_width="match_parent"
+            android:background="@drawable/budget_border"
+            android:textStyle="bold"
+            android:textSize="18sp"
+            android:layout_height="60dp"
+            android:gravity="center"
+            android:textAlignment="center"
+            android:text="Budget"
+            android:id="@+id/budget_text"
+            android:layout_weight="66.6"/>
+
+    </LinearLayout>
+
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/budget_view"
+        android:layout_width="match_parent"
+        android:layout_height="600dp"
+        android:layout_above="@+id/group_navigation"
+        android:layout_below="@id/budget_header" />
+
+    <com.google.android.material.bottomnavigation.BottomNavigationView
+        android:id="@+id/group_navigation"
+        android:layout_width="match_parent"
+        android:layout_height="56dp"
+        app:menu="@menu/group_navigation_menu"
+        android:layout_alignParentBottom="true"
+        android:layout_gravity="bottom"/>
+
+</RelativeLayout>

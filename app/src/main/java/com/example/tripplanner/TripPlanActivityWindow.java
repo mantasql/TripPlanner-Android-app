@@ -25,6 +25,9 @@ import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.ValueEventListener;
 
+import java.util.HashMap;
+import java.util.Map;
+
 public class TripPlanActivityWindow extends AppCompatActivity {
     private static final String TAG = "TripPlanActivity";
     private TripPlan tripPlan;
@@ -100,8 +103,10 @@ public class TripPlanActivityWindow extends AppCompatActivity {
             Intent intent = new Intent(TripPlanActivityWindow.this, MapsActivity.class);
             intent.putExtra("planNo", tripPlan.getId());
             startActivity(intent);
-        } else if (itemId == R.id.group_trip) {
+        } else if (itemId == R.id.menu_plan) {
             selectedFragment = new TripPlanFragment();
+        } else if (itemId == R.id.group_trip) {
+            selectedFragment = new GroupTripFragment();
         }
 
         if (selectedFragment != null) {
@@ -134,6 +139,13 @@ public class TripPlanActivityWindow extends AppCompatActivity {
             default:
                 return super.onOptionsItemSelected(item);
         }
+    }
+
+    public void saveTime(int value, int position)
+    {
+        Map<String, Object> update = new HashMap<String, Object>();
+        update.put("extraDurationValue", value);
+        planRef.child("itinerary").child(String.valueOf(position)).updateChildren(update);
     }
 
     public DatabaseReference getPlanRef() {

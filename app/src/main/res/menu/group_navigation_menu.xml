@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android">
+    <item android:id="@+id/add_friend_item"
+        android:icon="@drawable/ic_add_group_friend"
+        android:title="Add friend" />
+    <item android:id="@+id/add_budget_item"
+        android:icon="@drawable/ic_add_budget"
+        android:title="Add budget" />
+    <item android:id="@+id/split_budget_item"
+        android:icon="@drawable/ic_split_budget"
+        android:title="Split budget" />
+</menu>

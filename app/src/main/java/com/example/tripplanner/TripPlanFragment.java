@@ -212,11 +212,4 @@ public class TripPlanFragment extends Fragment {
 
         dialog.show();
     }
-
-    public void saveTime(int value, int position)
-    {
-        Map<String, Object> update = new HashMap<String, Object>();
-        update.put("extraDurationValue", value);
-        planRef.child("itinerary").child(String.valueOf(position)).updateChildren(update);
-    }
 }

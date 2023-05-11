@@ -1,5 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <menu xmlns:android="http://schemas.android.com/apk/res/android">
+    <item android:id="@+id/menu_plan"
+        android:icon="@drawable/ic_trip_plan"
+        android:title="Plan" />
     <item android:id="@+id/group_trip"
         android:icon="@drawable/ic_group_trip"
         android:title="Group" />
