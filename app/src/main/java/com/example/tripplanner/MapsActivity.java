@@ -228,6 +228,31 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                 direction(travelMode);
                 updateRecyclerView();
                 init = false;
+
+                mDatabase.child("users").addListenerForSingleValueEvent(new ValueEventListener() {
+                    @Override
+                    public void onDataChange(@NonNull DataSnapshot snapshot) {
+                        ArrayList<String> emails = new ArrayList<>(tripPlan.getTripFriends().keySet());
+                        emails.replaceAll(s -> s.replace('_', '.'));
+
+                        for (DataSnapshot userSnapshot : snapshot.getChildren())
+                        {
+                            String email = userSnapshot.child("email").getValue().toString();
+                            for (int i = 0; i < emails.size(); i++)
+                            {
+                                if (email.equals(emails.get(i)))
+                                {
+                                    userSnapshot.child("plans").child(tripPlan.getId()).getRef().setValue(tripPlan);
+                                }
+                            }
+                        }
+                    }
+
+                    @Override
+                    public void onCancelled(@NonNull DatabaseError error) {
+
+                    }
+                });
             }
 
             @Override

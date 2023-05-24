@@ -20,12 +20,14 @@ import android.widget.Button;
 import android.widget.EditText;
 
 import com.example.tripplanner.models.TripPlan;
+import com.example.tripplanner.models.User;
 import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.Task;
 import com.google.android.material.bottomnavigation.BottomNavigationView;
 import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
+import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.ValueEventListener;
 
 /**
@@ -39,12 +41,14 @@ public class GroupTripFragment extends Fragment {
     // the fragment initialization parameters, e.g. ARG_ITEM_NUMBER
     private static final String ARG_PARAM1 = "param1";
     private static final String ARG_PARAM2 = "param2";
+    private static final String TAG = "GroupTripFragment";
 
     private RecyclerView recyclerView;
     private DatabaseReference planRef;
     private TripPlanActivityWindow tripPlanActivity;
     private GroupTripAdapter groupAdapter;
     private TripPlan tripPlan;
+    private DatabaseReference mDatabase;
 
     // TODO: Rename and change types of parameters
     private String mParam1;
@@ -86,6 +90,7 @@ public class GroupTripFragment extends Fragment {
         super.onAttach(context);
         tripPlanActivity = (TripPlanActivityWindow) context;
         planRef = tripPlanActivity.getPlanRef();
+        mDatabase = FirebaseDatabase.getInstance("https://trip-planner-21c97-default-rtdb.europe-west1.firebasedatabase.app").getReference();
 
         planRef.addValueEventListener(new ValueEventListener() {
             @Override
@@ -155,12 +160,51 @@ public class GroupTripFragment extends Fragment {
                 //save to db
                 if(addFriendEditText.getText() != null)
                 {
-                    tripPlan.getTripFriends().add(addFriendEditText.getText().toString());
-                    planRef.child("tripFriends").setValue(tripPlan.getTripFriends()).addOnCompleteListener(new OnCompleteListener<Void>() {
+                    //get user from database
+                    String email = addFriendEditText.getText().toString();
+                    Log.d(TAG, "onClick: email: " + email);
+                    mDatabase.child("users").orderByChild("email").equalTo(email).addListenerForSingleValueEvent(new ValueEventListener() {
+                        @Override
+                        public void onDataChange(@NonNull DataSnapshot snapshot) {
+                            User user = null;
+                            for (DataSnapshot us : snapshot.getChildren())
+                            {
+                                user = us.getValue(User.class);
+                            }
+
+                            if (user == null)
+                            {
+                                Log.d(TAG, "onDataChange: user is null");
+                                return;
+                            }
+                            Log.d(TAG, "onDataChange: user: " + user);
+                            Log.d(TAG, "onDataChange: user email: " + user.getEmail());
+                            tripPlan.getTripFriends().put(user.getEmail().replace('.', '_'), 0);
+                            User finalUser = user;
+                            planRef.child("tripFriends").setValue(tripPlan.getTripFriends()).addOnCompleteListener(new OnCompleteListener<Void>() {
+                                @Override
+                                public void onComplete(@NonNull Task<Void> task) {
+                                    mDatabase.child("users").child(finalUser.getId()).child("plans").child(tripPlan.getId()).setValue(tripPlan).addOnCompleteListener(new OnCompleteListener<Void>() {
+                                        @Override
+                                        public void onComplete(@NonNull Task<Void> task) {
+
+                                        }
+                                    });
+                                }
+                            });
+                        }
+
+                        @Override
+                        public void onCancelled(@NonNull DatabaseError error) {
+
+                        }
+                    });
+
+/*                    planRef.child("tripFriends").setValue(tripPlan.getTripFriends()).addOnCompleteListener(new OnCompleteListener<Void>() {
                         @Override
                         public void onComplete(@NonNull Task<Void> task) {
                         }
-                    });
+                    });*/
                 }
                 dialog.dismiss();
             }

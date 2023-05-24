@@ -25,6 +25,7 @@ import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.ValueEventListener;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -128,11 +129,24 @@ public class TripPlanActivityWindow extends AppCompatActivity {
         switch (item.getItemId())
         {
             case R.id.delete_trip_plan:
-                mDatabase.child("users").child(user.getUid()).child("plans").child(tripPlan.getId()).removeValue().addOnCompleteListener(new OnCompleteListener<Void>() {
+                mDatabase.child("users").addListenerForSingleValueEvent(new ValueEventListener() {
                     @Override
-                    public void onComplete(@NonNull Task<Void> task) {
-                        Toast.makeText(TripPlanActivityWindow.this, "Trip plan removed successfully", Toast.LENGTH_SHORT).show();
-                        startActivity(new Intent(TripPlanActivityWindow.this, MainActivity.class));
+                    public void onDataChange(@NonNull DataSnapshot snapshot) {
+                        for (DataSnapshot userSnapshot : snapshot.getChildren()) {
+                            // Delete the item for each user
+                            userSnapshot.child("plans").child(tripPlan.getId()).getRef().removeValue().addOnCompleteListener(new OnCompleteListener<Void>() {
+                                @Override
+                                public void onComplete(@NonNull Task<Void> task) {
+                                    Toast.makeText(TripPlanActivityWindow.this, "Trip plan removed successfully", Toast.LENGTH_SHORT).show();
+                                    startActivity(new Intent(TripPlanActivityWindow.this, MainActivity.class));
+                                }
+                            });
+                        }
+                    }
+
+                    @Override
+                    public void onCancelled(@NonNull DatabaseError error) {
+
                     }
                 });
                 return true;
