@@ -57,7 +57,8 @@ public class TripPlanActivityWindow extends AppCompatActivity {
         if (planNo.equals("-1") && tripPlan == null)
         {
             String id = mDatabase.child("users").child(user.getUid()).child("plans").push().getKey();
-            tripPlan = new TripPlan(id, "My trip plan");
+            String email = user.getEmail().replace('.', '_');
+            tripPlan = new TripPlan(id, "My trip plan", email);
             mDatabase.child("users").child(user.getUid()).child("plans").child(tripPlan.getId()).setValue(tripPlan).addOnCompleteListener(new OnCompleteListener<Void>() {
                 @Override
                 public void onComplete(@NonNull Task<Void> task) {
@@ -159,7 +160,31 @@ public class TripPlanActivityWindow extends AppCompatActivity {
     {
         Map<String, Object> update = new HashMap<String, Object>();
         update.put("extraDurationValue", value);
-        planRef.child("itinerary").child(String.valueOf(position)).updateChildren(update);
+        mDatabase.child("users").addListenerForSingleValueEvent(new ValueEventListener() {
+            @Override
+            public void onDataChange(@NonNull DataSnapshot snapshot) {
+                ArrayList<String> emails = new ArrayList<>(tripPlan.getTravelers().keySet());
+                emails.replaceAll(s -> s.replace('_', '.'));
+
+                for (DataSnapshot userSnapshot : snapshot.getChildren())
+                {
+                    String email = userSnapshot.child("email").getValue().toString();
+                    for (int i = 0; i < emails.size(); i++)
+                    {
+                        if (email.equals(emails.get(i)))
+                        {
+                            userSnapshot.child("plans").child(tripPlan.getId()).child("itinerary").child(String.valueOf(position)).getRef().updateChildren(update);
+                        }
+                    }
+                }
+            }
+
+            @Override
+            public void onCancelled(@NonNull DatabaseError error) {
+
+            }
+        });
+        //planRef.child("itinerary").child(String.valueOf(position)).updateChildren(update);
     }
 
     public DatabaseReference getPlanRef() {

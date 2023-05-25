@@ -13,6 +13,8 @@ import androidx.recyclerview.widget.RecyclerView;
 
 import com.example.tripplanner.models.TripPlan;
 import com.example.tripplanner.models.User;
+import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.auth.FirebaseUser;
 
 import java.util.ArrayList;
 
@@ -24,19 +26,19 @@ public class GroupTripAdapter extends RecyclerView.Adapter<GroupTripAdapter.View
     private ArrayList<String> users;
     private ArrayList<Integer> budget;
 
+    private FirebaseUser user;
+
     public GroupTripAdapter(Context mContext, TripPlan tripPlan) {
         this.mContext = mContext;
         this.tripPlan = tripPlan;
+        user = FirebaseAuth.getInstance().getCurrentUser();
 
         if (tripPlan == null)
         {
             return;
         }
 
-        users = new ArrayList<>(tripPlan.getTripFriends().keySet());
-        budget = new ArrayList<>(tripPlan.getTripFriends().values());
-
-        users.replaceAll(s -> s.replace('_', '.'));
+        refreshArray();
     }
 
     @NonNull
@@ -48,23 +50,24 @@ public class GroupTripAdapter extends RecyclerView.Adapter<GroupTripAdapter.View
 
     @Override
     public void onBindViewHolder(@NonNull ViewHolder holder, int position) {
-        if (tripPlan.getTripFriends().size() == 0)
+        if (tripPlan.getTravelers().size() == 0)
         {
             return;
         }
 
-        if (users.size() == 0 || budget.size() == 0)
-        {
-            users = new ArrayList<>(tripPlan.getTripFriends().keySet());
-            budget = new ArrayList<>(tripPlan.getTripFriends().values());
+        Log.d(TAG, "onBindViewHolder: users size: " + users.size());
+        Log.d(TAG, "onBindViewHolder: Adapter pos: " + holder.getAdapterPosition());
 
-            users.replaceAll(s -> s.replace('_', '.'));
+        if (holder.getAdapterPosition() >= users.size())
+        {
+            refreshArray();
         }
 
-        Log.d(TAG, "onBindViewHolder: users size: " + users.size());
-
-        holder.friendEmail.setText(users.get(holder.getAdapterPosition()));
-        holder.budgetInt.setText(budget.get(holder.getAdapterPosition()).toString());
+        if (users.size() != 0 || budget.size() != 0)
+        {
+            holder.friendEmail.setText(users.get(holder.getAdapterPosition()));
+            holder.budgetInt.setText(budget.get(holder.getAdapterPosition()).toString() + " €");
+        }
     }
 
     @Override
@@ -73,7 +76,13 @@ public class GroupTripAdapter extends RecyclerView.Adapter<GroupTripAdapter.View
         {
             return 0;
         }
-        return tripPlan.getTripFriends().size();
+
+        if (tripPlan.getTravelers().size() == 0)
+        {
+            return 0;
+        }
+
+        return tripPlan.getTravelers().size() - 1;
     }
 
     public class ViewHolder extends RecyclerView.ViewHolder {
@@ -85,6 +94,24 @@ public class GroupTripAdapter extends RecyclerView.Adapter<GroupTripAdapter.View
             super(itemView);
             friendEmail = itemView.findViewById(R.id.group_friend);
             budgetInt = itemView.findViewById(R.id.budget_int);
+        }
+    }
+
+    private void refreshArray()
+    {
+        users = new ArrayList<>(tripPlan.getTravelers().keySet());
+        budget = new ArrayList<>(tripPlan.getTravelers().values());
+
+        users.replaceAll(s -> s.replace('_', '.'));
+
+        for (int i = 0; i < users.size(); i++)
+        {
+            if (users.get(i).equals(user.getEmail()))
+            {
+                users.remove(i);
+                budget.remove(i);
+                break;
+            }
         }
     }
 }

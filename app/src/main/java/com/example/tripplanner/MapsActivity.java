@@ -109,7 +109,6 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     private Location currentLocation;
     private ActivityMapsBinding binding;
     private FusedLocationProviderClient fusedLocationProviderClient;
-    //private ItineraryAdapter adapter;
     private List<Place.Field> placeFields;
     private AlertDialog.Builder dialogBuilder;
     private AlertDialog dialog;
@@ -232,7 +231,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                 mDatabase.child("users").addListenerForSingleValueEvent(new ValueEventListener() {
                     @Override
                     public void onDataChange(@NonNull DataSnapshot snapshot) {
-                        ArrayList<String> emails = new ArrayList<>(tripPlan.getTripFriends().keySet());
+                        ArrayList<String> emails = new ArrayList<>(tripPlan.getTravelers().keySet());
                         emails.replaceAll(s -> s.replace('_', '.'));
 
                         for (DataSnapshot userSnapshot : snapshot.getChildren())

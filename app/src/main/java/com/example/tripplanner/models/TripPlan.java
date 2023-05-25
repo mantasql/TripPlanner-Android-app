@@ -25,11 +25,12 @@ public class TripPlan {
     private Date endDate = new Date();
     private String description;
     private ArrayList<Itinerary> itinerary = new ArrayList<>();
-    private HashMap<String, Integer> tripFriends = new HashMap<>();
+    private HashMap<String, Integer> travelers = new HashMap<>();
 
-    public TripPlan(String id, String title) {
+    public TripPlan(String id, String title, String email) {
         this.id = id;
         this.title = title;
+        travelers.put(email, 0);
     }
 
     public TripPlan() {
@@ -89,12 +90,12 @@ public class TripPlan {
         this.description = description;
     }
 
-    public HashMap<String, Integer> getTripFriends() {
-        return tripFriends;
+    public HashMap<String, Integer> getTravelers() {
+        return travelers;
     }
 
-    public void setTripFriends(HashMap<String, Integer> tripFriends) {
-        this.tripFriends = tripFriends;
+    public void setTravelers(HashMap<String, Integer> travelers) {
+        this.travelers = travelers;
     }
 
     public void removeAndRearrange(int position)

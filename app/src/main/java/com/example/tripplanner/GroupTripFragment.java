@@ -18,17 +18,24 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
 import android.widget.EditText;
+import android.widget.TextView;
 
 import com.example.tripplanner.models.TripPlan;
 import com.example.tripplanner.models.User;
 import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.Task;
 import com.google.android.material.bottomnavigation.BottomNavigationView;
+import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.ValueEventListener;
+
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * A simple {@link Fragment} subclass.
@@ -44,11 +51,14 @@ public class GroupTripFragment extends Fragment {
     private static final String TAG = "GroupTripFragment";
 
     private RecyclerView recyclerView;
+    private TextView budgetText;
     private DatabaseReference planRef;
     private TripPlanActivityWindow tripPlanActivity;
     private GroupTripAdapter groupAdapter;
     private TripPlan tripPlan;
     private DatabaseReference mDatabase;
+
+    private String loggedInUsersEmail;
 
     // TODO: Rename and change types of parameters
     private String mParam1;
@@ -92,12 +102,19 @@ public class GroupTripFragment extends Fragment {
         planRef = tripPlanActivity.getPlanRef();
         mDatabase = FirebaseDatabase.getInstance("https://trip-planner-21c97-default-rtdb.europe-west1.firebasedatabase.app").getReference();
 
+        FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
+        loggedInUsersEmail = user.getEmail().replace('.', '_');
+
         planRef.addValueEventListener(new ValueEventListener() {
             @Override
             public void onDataChange(@NonNull DataSnapshot snapshot) {
                 tripPlan = snapshot.getValue(TripPlan.class);
-                groupAdapter = new GroupTripAdapter(getContext(), tripPlan);
-                recyclerView.setAdapter(groupAdapter);
+                if (tripPlan != null)
+                {
+                    groupAdapter = new GroupTripAdapter(getContext(), tripPlan);
+                    recyclerView.setAdapter(groupAdapter);
+                    budgetText.setText(tripPlan.getTravelers().get(loggedInUsersEmail).toString() + " €");
+                }
             }
 
             @Override
@@ -111,6 +128,7 @@ public class GroupTripFragment extends Fragment {
                              Bundle savedInstanceState) {
         View rootView = inflater.inflate(R.layout.fragment_group_trip, container, false);
 
+        budgetText = rootView.findViewById(R.id.budget_int);
         recyclerView = rootView.findViewById(R.id.budget_view);
         recyclerView.setLayoutManager(new LinearLayoutManager(rootView.getContext()));
         recyclerView.addItemDecoration(new DividerItemDecoration(recyclerView.getContext(), DividerItemDecoration.VERTICAL));
@@ -136,9 +154,103 @@ public class GroupTripFragment extends Fragment {
     };
 
     private void splitBudget(View view) {
+        int budget = 0;
+
+        for (Integer i : tripPlan.getTravelers().values())
+        {
+            budget += i;
+        }
+
+        budget /= tripPlan.getTravelers().size();
+
+        for (Map.Entry<String, Integer> entry : tripPlan.getTravelers().entrySet())
+        {
+            entry.setValue(budget);
+        }
+        mDatabase.child("users").addListenerForSingleValueEvent(new ValueEventListener() {
+            @Override
+            public void onDataChange(@NonNull DataSnapshot snapshot) {
+                ArrayList<String> emails = new ArrayList<>(tripPlan.getTravelers().keySet());
+                emails.replaceAll(s -> s.replace('_', '.'));
+
+                for (DataSnapshot userSnapshot : snapshot.getChildren())
+                {
+                    String email = userSnapshot.child("email").getValue().toString();
+                    for (int i = 0; i < emails.size(); i++)
+                    {
+                        if (email.equals(emails.get(i)))
+                        {
+                            userSnapshot.child("plans").child(tripPlan.getId()).child("travelers").getRef().setValue(tripPlan.getTravelers());
+                        }
+                    }
+                }
+            }
+
+            @Override
+            public void onCancelled(@NonNull DatabaseError error) {
+
+            }
+        });
     }
 
     private void openAddBudgetWindow(View view) {
+        AlertDialog.Builder dialogBuilder = new AlertDialog.Builder(view.getContext());
+        LayoutInflater li = (LayoutInflater) view.getContext().getSystemService(Context.LAYOUT_INFLATER_SERVICE);
+        final View addBudgetPopupView = li.inflate(R.layout.fragment_add_budget, null);
+
+        EditText addBudgetEditText = addBudgetPopupView.findViewById(R.id.add_budget_edit_text);
+        Button addBtn = addBudgetPopupView.findViewById(R.id.add_budget_btn);
+        Button closeBtn = addBudgetPopupView.findViewById(R.id.add_budget_cancel);
+
+        dialogBuilder.setView(addBudgetPopupView);
+        Dialog dialog = dialogBuilder.create();
+        dialog.show();
+
+        addBtn.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                if(addBudgetEditText.getText() != null)
+                {
+                    Integer budgetValue = Integer.valueOf(addBudgetEditText.getText().toString());
+
+                    tripPlan.getTravelers().put(loggedInUsersEmail, budgetValue);
+                    mDatabase.child("users").addListenerForSingleValueEvent(new ValueEventListener() {
+                        @Override
+                        public void onDataChange(@NonNull DataSnapshot snapshot) {
+                            ArrayList<String> emails = new ArrayList<>(tripPlan.getTravelers().keySet());
+                            emails.replaceAll(s -> s.replace('_', '.'));
+
+                            for (DataSnapshot userSnapshot : snapshot.getChildren())
+                            {
+                                String email = userSnapshot.child("email").getValue().toString();
+                                for (int i = 0; i < emails.size(); i++)
+                                {
+                                    if (email.equals(emails.get(i)))
+                                    {
+                                        userSnapshot.child("plans").child(tripPlan.getId()).child("travelers").getRef().setValue(tripPlan.getTravelers());
+                                    }
+                                }
+                            }
+                        }
+
+                        @Override
+                        public void onCancelled(@NonNull DatabaseError error) {
+
+                        }
+                    });
+                    //planRef.child("travelers").setValue(tripPlan.getTravelers());
+                }
+
+                dialog.dismiss();
+            }
+        });
+
+        closeBtn.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                dialog.dismiss();
+            }
+        });
     }
 
     private void openAddFriendWindow(View view) {
@@ -179,9 +291,9 @@ public class GroupTripFragment extends Fragment {
                             }
                             Log.d(TAG, "onDataChange: user: " + user);
                             Log.d(TAG, "onDataChange: user email: " + user.getEmail());
-                            tripPlan.getTripFriends().put(user.getEmail().replace('.', '_'), 0);
+                            tripPlan.getTravelers().put(user.getEmail().replace('.', '_'), 0);
                             User finalUser = user;
-                            planRef.child("tripFriends").setValue(tripPlan.getTripFriends()).addOnCompleteListener(new OnCompleteListener<Void>() {
+/*                            planRef.child("travelers").setValue(tripPlan.getTravelers()).addOnCompleteListener(new OnCompleteListener<Void>() {
                                 @Override
                                 public void onComplete(@NonNull Task<Void> task) {
                                     mDatabase.child("users").child(finalUser.getId()).child("plans").child(tripPlan.getId()).setValue(tripPlan).addOnCompleteListener(new OnCompleteListener<Void>() {
@@ -190,6 +302,31 @@ public class GroupTripFragment extends Fragment {
 
                                         }
                                     });
+                                }
+                            });*/
+
+                            mDatabase.child("users").addListenerForSingleValueEvent(new ValueEventListener() {
+                                @Override
+                                public void onDataChange(@NonNull DataSnapshot snapshot) {
+                                    ArrayList<String> emails = new ArrayList<>(tripPlan.getTravelers().keySet());
+                                    emails.replaceAll(s -> s.replace('_', '.'));
+
+                                    for (DataSnapshot userSnapshot : snapshot.getChildren())
+                                    {
+                                        String email = userSnapshot.child("email").getValue().toString();
+                                        for (int i = 0; i < emails.size(); i++)
+                                        {
+                                            if (email.equals(emails.get(i)))
+                                            {
+                                                userSnapshot.child("plans").child(tripPlan.getId()).getRef().setValue(tripPlan);
+                                            }
+                                        }
+                                    }
+                                }
+
+                                @Override
+                                public void onCancelled(@NonNull DatabaseError error) {
+
                                 }
                             });
                         }
@@ -200,11 +337,6 @@ public class GroupTripFragment extends Fragment {
                         }
                     });
 
-/*                    planRef.child("tripFriends").setValue(tripPlan.getTripFriends()).addOnCompleteListener(new OnCompleteListener<Void>() {
-                        @Override
-                        public void onComplete(@NonNull Task<Void> task) {
-                        }
-                    });*/
                 }
                 dialog.dismiss();
             }
