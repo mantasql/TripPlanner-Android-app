@@ -100,7 +100,6 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     private ImageView mGps;
     private ImageView mDriving;
     private ImageView mWalking;
-    private ImageView mBicycling;
     private TravelMode travelMode = TravelMode.DRIVING;
     private AutocompleteSupportFragment autocompleteFragment;
     private RecyclerView tripsList;
@@ -118,7 +117,6 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     private DatabaseReference mDatabase;
     private DatabaseReference planRef;
     private ValueEventListener tripPlanDataListener;
-    private User loggedInUser;
     private RecyclerView recyclerView;
     private boolean init = true;
 
